@@ -144,9 +144,9 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod=false'
 
-  # Деплой на production (main branch)
+  # Деплой на production (main branch) - сначала на staging
   deploy-production:
-    name: Deploy to Production
+    name: Deploy to Production (via Staging)
     runs-on: ubuntu-latest
     needs: build-and-test
     if: github.ref == 'refs/heads/main'
@@ -182,10 +182,10 @@ jobs:
       - name: Clean .vercel directory
         run: rm -rf .vercel
         
-      - name: Deploy to Vercel (Production)
+      - name: Deploy to Vercel (Production - Staging First)
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod=true'
+          vercel-args: '--prod=false'
