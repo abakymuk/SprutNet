@@ -1,286 +1,363 @@
-# Entity Relationship Diagram (ERD) - Maersk Data Model
+# 🚢 Maersk API Data Model - Entity Relationship Diagram
 
-## Overview
-This document describes the normalized database schema for the Maersk API integration, based on the analysis of four API contracts:
-- Deadlines API
-- Locations API  
-- Point-to-Point Schedules API
-- Vessels API
-
-## Database Schema
+## 📊 ERD Diagram
 
 ```mermaid
 erDiagram
     %% Reference Tables
-    countries {
-        varchar(2) country_code PK
-        varchar(100) country_name
-        timestamptz created_at
-        timestamptz updated_at
+    Country {
+        string country_code PK
+        string country_name
+        datetime created_at
+        datetime updated_at
     }
-
-    carrier_codes {
-        varchar(4) carrier_code PK
-        varchar(100) carrier_name
-        text description
-        timestamptz created_at
-        timestamptz updated_at
+    
+    CarrierCode {
+        string carrier_code PK
+        string carrier_name
+        string description
+        datetime created_at
+        datetime updated_at
     }
-
-    transport_modes {
-        varchar(3) mode_code PK
-        varchar(50) mode_name
-        text description
-        timestamptz created_at
-        timestamptz updated_at
+    
+    TransportMode {
+        string mode_code PK
+        string mode_name
+        string description
+        datetime created_at
+        datetime updated_at
     }
-
-    location_types {
-        varchar(20) type_code PK
-        varchar(50) type_name
-        text description
-        timestamptz created_at
-        timestamptz updated_at
+    
+    LocationType {
+        string type_code PK
+        string type_name
+        string description
+        datetime created_at
+        datetime updated_at
     }
-
+    
     %% Main Tables
-    vessels {
-        varchar(7) vessel_imo_number PK
-        varchar(3) carrier_vessel_code
-        varchar(18) vessel_short_name
-        varchar(35) vessel_long_name
-        varchar(2) vessel_flag_code
-        integer vessel_built_year
-        varchar(10) vessel_call_sign
-        integer vessel_capacity_teu
-        timestamptz created_at
-        timestamptz updated_at
+    Vessel {
+        string vessel_imo_number PK
+        string carrier_vessel_code
+        string vessel_short_name
+        string vessel_long_name
+        string vessel_flag_code FK
+        int vessel_built_year
+        string vessel_call_sign
+        int vessel_capacity_teu
+        datetime created_at
+        datetime updated_at
     }
-
-    locations {
-        varchar(13) carrier_geo_id PK
-        varchar(2) country_code FK
-        varchar(100) city_name
-        varchar(5) un_location_code
-        varchar(3) un_region_code
-        varchar(100) un_region_name
-        varchar(20) location_type FK
-        varchar(100) location_name
-        varchar(50) time_zone_id
-        varchar(13) carrier_country_geo_id
-        timestamptz created_at
-        timestamptz updated_at
+    
+    Location {
+        string carrier_geo_id PK
+        string country_code FK
+        string city_name
+        string un_location_code
+        string un_region_code
+        string un_region_name
+        string location_type FK
+        string location_name
+        string time_zone_id
+        string carrier_country_geo_id
+        string carrier_rkts_code
+        string carrier_rkst_code
+        string[] alternate_aliases
+        datetime created_at
+        datetime updated_at
     }
-
-    facilities {
+    
+    Facility {
         uuid id PK
-        varchar(13) location_geo_id FK
-        varchar(20) facility_type
-        varchar(100) facility_name
-        varchar(13) carrier_site_geo_id
-        varchar(5) site_un_location_code
-        timestamptz created_at
-        timestamptz updated_at
+        string location_geo_id FK
+        string facility_type
+        string facility_name
+        string carrier_site_geo_id
+        string site_un_location_code
+        string city_un_location_code
+        datetime created_at
+        datetime updated_at
     }
-
-    point_to_point_schedules {
+    
+    PointToPointSchedule {
         uuid id PK
-        varchar(50) carrier_product_id
-        varchar(50) carrier_product_sequence_id
-        varchar(4) vessel_operator_carrier_code FK
-        varchar(13) collection_origin_geo_id FK
-        varchar(13) delivery_destination_geo_id FK
+        string carrier_product_id
+        string carrier_product_sequence_id
+        string vessel_operator_carrier_code FK
+        string collection_origin_geo_id FK
+        string delivery_destination_geo_id FK
         date product_valid_from_date
         date product_valid_to_date
-        integer number_of_product_links
-        timestamptz created_at
-        timestamptz updated_at
+        int number_of_product_links
+        string cargo_type
+        string iso_equipment_code
+        int stuffing_weight
+        string weight_measurement_unit
+        int stuffing_volume
+        string volume_measurement_unit
+        string export_service_mode
+        string import_service_mode
+        date start_date
+        string start_date_type
+        string date_range
+        string vessel_flag_code FK
+        datetime created_at
+        datetime updated_at
     }
-
-    transport_legs {
+    
+    TransportLeg {
         uuid id PK
         uuid schedule_id FK
-        timestamptz departure_date_time
-        timestamptz arrival_date_time
-        varchar(7) vessel_imo_number FK
-        varchar(3) transport_mode FK
-        varchar(100) carrier_trade_lane_name
-        varchar(4) carrier_departure_voyage_number
-        varchar(1) inducement_link_flag
-        varchar(3) carrier_service_code
-        varchar(100) carrier_service_name
-        varchar(10) link_direction
-        varchar(3) carrier_code
-        varchar(1) routing_type
-        varchar(13) start_location_geo_id FK
-        varchar(13) end_location_geo_id FK
-        timestamptz created_at
-        timestamptz updated_at
+        datetime departure_date_time
+        datetime arrival_date_time
+        string vessel_imo_number FK
+        string transport_mode FK
+        string carrier_trade_lane_name
+        string carrier_departure_voyage_number
+        string inducement_link_flag
+        string carrier_service_code
+        string carrier_service_name
+        string link_direction
+        string carrier_code
+        string routing_type
+        string start_location_geo_id FK
+        string end_location_geo_id FK
+        int transit_time_minutes
+        datetime created_at
+        datetime updated_at
     }
-
-    deadlines {
+    
+    Deadline {
         uuid id PK
-        varchar(7) vessel_imo_number FK
-        varchar(4) voyage
-        varchar(100) port_of_load
-        varchar(2) iso_country_code FK
-        varchar(100) terminal_name
-        varchar(100) deadline_name
-        timestamptz deadline_local
-        timestamptz created_at
-        timestamptz updated_at
+        string vessel_imo_number FK
+        string voyage
+        string port_of_load
+        string iso_country_code FK
+        string terminal_name
+        string deadline_name
+        datetime deadline_local
+        datetime created_at
+        datetime updated_at
     }
-
+    
     %% Relationships
-    countries ||--o{ locations : "has"
-    countries ||--o{ deadlines : "has"
+    Country ||--o{ Vessel : "flag_code"
+    Country ||--o{ Location : "country_code"
+    Country ||--o{ PointToPointSchedule : "vessel_flag_code"
+    Country ||--o{ Deadline : "iso_country_code"
     
-    carrier_codes ||--o{ point_to_point_schedules : "operates"
+    CarrierCode ||--o{ PointToPointSchedule : "vessel_operator_carrier_code"
     
-    transport_modes ||--o{ transport_legs : "used_in"
+    TransportMode ||--o{ TransportLeg : "transport_mode"
     
-    location_types ||--o{ locations : "categorizes"
+    LocationType ||--o{ Location : "location_type"
     
-    vessels ||--o{ transport_legs : "assigned_to"
-    vessels ||--o{ deadlines : "has"
+    Vessel ||--o{ TransportLeg : "vessel_imo_number"
+    Vessel ||--o{ Deadline : "vessel_imo_number"
     
-    locations ||--o{ facilities : "contains"
-    locations ||--o{ point_to_point_schedules : "origin"
-    locations ||--o{ point_to_point_schedules : "destination"
-    locations ||--o{ transport_legs : "start"
-    locations ||--o{ transport_legs : "end"
+    Location ||--o{ Facility : "location_geo_id"
+    Location ||--o{ PointToPointSchedule : "collection_origin_geo_id"
+    Location ||--o{ PointToPointSchedule : "delivery_destination_geo_id"
+    Location ||--o{ TransportLeg : "start_location_geo_id"
+    Location ||--o{ TransportLeg : "end_location_geo_id"
     
-    point_to_point_schedules ||--o{ transport_legs : "contains"
+    PointToPointSchedule ||--o{ TransportLeg : "schedule_id"
 ```
 
-## Table Descriptions
+## 📋 Table Descriptions
 
-### Reference Tables
+### 🔗 Reference Tables
 
-#### `countries`
-- **Purpose**: Stores ISO 3166-1 country codes and names
+#### **Country**
+- **Purpose**: ISO 3166-1 country codes and names
 - **Key Fields**: `country_code` (PK), `country_name`
-- **Relations**: Referenced by `locations` and `deadlines`
+- **Usage**: Referenced by vessels, locations, schedules, and deadlines
+- **Sample Data**: US, CN, DE, NL, SG, HK, JP, KR, GB, FR, etc.
 
-#### `carrier_codes`
-- **Purpose**: Stores SCAC (Standard Carrier Alpha Codes) for shipping companies
-- **Key Fields**: `carrier_code` (PK), `carrier_name`
-- **Relations**: Referenced by `point_to_point_schedules`
+#### **CarrierCode**
+- **Purpose**: NMFTA SCAC codes for Maersk carriers
+- **Key Fields**: `carrier_code` (PK), `carrier_name`, `description`
+- **Usage**: Referenced by point-to-point schedules
+- **Sample Data**: MAEU, SEAU, SEJJ, MCPU, MAEI
 
-#### `transport_modes`
-- **Purpose**: Defines different transportation modes (vessel, truck, rail, etc.)
-- **Key Fields**: `mode_code` (PK), `mode_name`
-- **Relations**: Referenced by `transport_legs`
+#### **TransportMode**
+- **Purpose**: Transportation modes for transport legs
+- **Key Fields**: `mode_code` (PK), `mode_name`, `description`
+- **Usage**: Referenced by transport legs
+- **Sample Data**: MVS, FEF, FEO, BAR, TRK, RR, VSF, VSL, VSM
 
-#### `location_types`
-- **Purpose**: Categorizes locations (city, terminal, depot, etc.)
-- **Key Fields**: `type_code` (PK), `type_name`
-- **Relations**: Referenced by `locations`
+#### **LocationType**
+- **Purpose**: Types of locations (cities, terminals, etc.)
+- **Key Fields**: `type_code` (PK), `type_name`, `description`
+- **Usage**: Referenced by locations
+- **Sample Data**: CITY, COUNTRY, TERMINAL, BARGE_TERMINAL, RAIL_TERMINAL, CONTAINER_FREIGHT_ST, CUSTOMER_LOCATION, DEPOT
 
-### Main Tables
+### 🚢 Main Tables
 
-#### `vessels`
-- **Purpose**: Stores vessel information from Maersk fleet
-- **Key Fields**: `vessel_imo_number` (PK), vessel details
-- **Relations**: Referenced by `transport_legs` and `deadlines`
+#### **Vessel**
+- **Purpose**: Vessel information from Maersk fleet
+- **Key Fields**: `vessel_imo_number` (PK), `carrier_vessel_code`, `vessel_long_name`
+- **Relations**: Country (flag), TransportLeg, Deadline
+- **API Source**: Vessels API
 
-#### `locations`
-- **Purpose**: Stores ports, cities, and other geographical locations
-- **Key Fields**: `carrier_geo_id` (PK), location details
-- **Relations**: Referenced by multiple tables for origin/destination
+#### **Location**
+- **Purpose**: Geographic locations (cities, ports, terminals)
+- **Key Fields**: `carrier_geo_id` (PK), `country_code`, `city_name`, `un_location_code`
+- **Relations**: Country, LocationType, Facility, PointToPointSchedule, TransportLeg
+- **API Source**: Locations API
 
-#### `facilities`
-- **Purpose**: Stores terminals, depots, and other facilities
-- **Key Fields**: `id` (PK), facility details
-- **Relations**: Belongs to `locations`
+#### **Facility**
+- **Purpose**: Specific facilities within locations (terminals, depots)
+- **Key Fields**: `id` (PK), `location_geo_id`, `facility_type`, `facility_name`
+- **Relations**: Location
+- **API Source**: P2P API (facilities object)
 
-#### `point_to_point_schedules`
-- **Purpose**: Stores complete shipping schedules between origin and destination
-- **Key Fields**: `id` (PK), schedule details
-- **Relations**: Contains `transport_legs`, references `locations` and `carrier_codes`
+#### **PointToPointSchedule**
+- **Purpose**: Ocean product schedules with origin/destination
+- **Key Fields**: `id` (PK), `carrier_product_id`, `collection_origin_geo_id`, `delivery_destination_geo_id`
+- **Relations**: CarrierCode, Location (origin/destination), Country (flag), TransportLeg
+- **API Source**: P2P API
 
-#### `transport_legs`
-- **Purpose**: Stores individual transport segments within a schedule
-- **Key Fields**: `id` (PK), leg details
-- **Relations**: Belongs to `point_to_point_schedules`, references `vessels` and `locations`
+#### **TransportLeg**
+- **Purpose**: Individual transport segments within schedules
+- **Key Fields**: `id` (PK), `schedule_id`, `vessel_imo_number`, `transport_mode`
+- **Relations**: PointToPointSchedule, Vessel, TransportMode, Location (start/end)
+- **API Source**: P2P API (transportLegs array)
 
-#### `deadlines`
-- **Purpose**: Stores shipment deadlines for specific vessels and ports
-- **Key Fields**: `id` (PK), deadline details
-- **Relations**: References `vessels` and `countries`
+#### **Deadline**
+- **Purpose**: Vessel/voyage deadlines for specific ports
+- **Key Fields**: `id` (PK), `vessel_imo_number`, `voyage`, `port_of_load`
+- **Relations**: Vessel, Country
+- **API Source**: Deadlines API
 
-## Key Design Decisions
+## 🔑 Key Design Decisions
 
-### 1. Normalization
-- **3NF Compliance**: All tables are normalized to eliminate redundancy
-- **Foreign Keys**: Proper relationships established between tables
-- **Reference Tables**: Separate tables for codes and types to maintain data integrity
+### 1. **Normalization Strategy**
+- **Reference Tables**: Countries, carrier codes, transport modes, location types
+- **Main Tables**: Vessels, locations, facilities, schedules, transport legs, deadlines
+- **Benefits**: Data consistency, reduced redundancy, easier maintenance
 
-### 2. Performance Optimization
+### 2. **Performance Optimization**
 - **Indexes**: Created on frequently queried fields
-- **Composite Indexes**: For date ranges and common query patterns
-- **UUID Primary Keys**: For tables that don't have natural business keys
+- **Composite Indexes**: For date ranges and location combinations
+- **Foreign Key Indexes**: Automatic indexes on all foreign keys
 
-### 3. Data Integrity
-- **Constraints**: Foreign key constraints ensure referential integrity
-- **Triggers**: Automatic `updated_at` timestamp updates
-- **RLS**: Row Level Security enabled on all tables
+### 3. **Data Integrity**
+- **Foreign Key Constraints**: All relationships properly defined
+- **Cascade Deletes**: Transport legs cascade when schedules are deleted
+- **Default Values**: Sensible defaults for cargo types, equipment codes, etc.
 
-### 4. API Alignment
+### 4. **API Alignment**
 - **Field Mapping**: Direct mapping from API response fields
-- **Data Types**: Appropriate PostgreSQL types for each field
-- **Nullable Fields**: Handles optional API fields properly
+- **Data Types**: Preserved original data types and constraints
+- **Optional Fields**: All optional API fields marked as nullable
 
-## Sample Queries
+## 📊 Sample Queries
 
-### Get Schedule with All Legs
+### 1. **Find all vessels with their flag countries**
 ```sql
 SELECT 
-    s.carrier_product_id,
-    s.collection_origin_geo_id,
-    s.delivery_destination_geo_id,
+    v.vessel_long_name,
+    v.vessel_capacity_teu,
+    c.country_name as flag_country
+FROM vessels v
+JOIN countries c ON v.vessel_flag_code = c.country_code
+ORDER BY v.vessel_capacity_teu DESC;
+```
+
+### 2. **Get point-to-point schedules with origin/destination details**
+```sql
+SELECT 
+    p.carrier_product_id,
+    cc.carrier_name,
+    origin.city_name as origin_city,
+    origin.country_code as origin_country,
+    dest.city_name as destination_city,
+    dest.country_code as destination_country,
+    p.number_of_product_links
+FROM point_to_point_schedules p
+JOIN carrier_codes cc ON p.vessel_operator_carrier_code = cc.carrier_code
+JOIN locations origin ON p.collection_origin_geo_id = origin.carrier_geo_id
+JOIN locations dest ON p.delivery_destination_geo_id = dest.carrier_geo_id
+WHERE p.product_valid_from_date >= CURRENT_DATE;
+```
+
+### 3. **Find transport legs for a specific vessel**
+```sql
+SELECT 
     tl.departure_date_time,
     tl.arrival_date_time,
-    v.vessel_long_name,
-    tm.mode_name
-FROM point_to_point_schedules s
-JOIN transport_legs tl ON s.id = tl.schedule_id
-LEFT JOIN vessels v ON tl.vessel_imo_number = v.vessel_imo_number
-LEFT JOIN transport_modes tm ON tl.transport_mode = tm.mode_code
-WHERE s.collection_origin_geo_id = 'GEO1234567890'
+    tm.mode_name as transport_mode,
+    start_loc.city_name as start_city,
+    end_loc.city_name as end_city,
+    v.vessel_long_name
+FROM transport_legs tl
+JOIN vessels v ON tl.vessel_imo_number = v.vessel_imo_number
+JOIN transport_modes tm ON tl.transport_mode = tm.mode_code
+JOIN locations start_loc ON tl.start_location_geo_id = start_loc.carrier_geo_id
+JOIN locations end_loc ON tl.end_location_geo_id = end_loc.carrier_geo_id
+WHERE v.vessel_imo_number = '9456783'
 ORDER BY tl.departure_date_time;
 ```
 
-### Get Deadlines for Vessel
+### 4. **Get deadlines for a specific vessel/voyage**
 ```sql
 SELECT 
     d.deadline_name,
     d.deadline_local,
     d.terminal_name,
+    d.port_of_load,
     c.country_name
 FROM deadlines d
 JOIN countries c ON d.iso_country_code = c.country_code
-WHERE d.vessel_imo_number = '1234567'
+WHERE d.vessel_imo_number = '9456783' 
+  AND d.voyage = '216E'
 ORDER BY d.deadline_local;
 ```
 
-### Get Locations by Type
-```sql
-SELECT 
-    l.city_name,
-    l.location_name,
-    lt.type_name,
-    c.country_name
-FROM locations l
-JOIN location_types lt ON l.location_type = lt.type_code
-JOIN countries c ON l.country_code = c.country_code
-WHERE lt.type_code = 'TERMINAL'
-ORDER BY l.city_name;
-```
+## 🔒 Security & Access Control
 
-## Migration Notes
+### **Row Level Security (RLS)**
+- **Authenticated Users**: Read-only access to all tables
+- **Service Role**: Full access for API operations
+- **Policies**: Based on user roles and authentication status
 
-- **UUID Extension**: Required for UUID primary keys
-- **RLS Policies**: Basic read/write access for authenticated users
-- **Sample Data**: Reference tables populated with common values
-- **Triggers**: Automatic timestamp updates on all tables
+### **Data Protection**
+- **Sensitive Data**: No sensitive information stored
+- **Audit Trail**: `created_at` and `updated_at` timestamps on all tables
+- **Access Logging**: Supabase provides built-in access logging
+
+## 📈 Migration Notes
+
+### **Version History**
+- **v1.0**: Initial schema based on Maersk API contracts
+- **v1.1**: Added missing fields from API specifications
+- **v1.2**: Enhanced relationships and constraints
+- **v1.3**: Added performance indexes and RLS policies
+
+### **Future Enhancements**
+- **Partitioning**: Consider partitioning large tables by date
+- **Materialized Views**: For complex aggregations
+- **Full-Text Search**: For location and vessel name searches
+- **Caching**: Redis integration for frequently accessed data
+
+## 🚀 Usage Guidelines
+
+### **Best Practices**
+1. **Use Foreign Keys**: Always use foreign key relationships for data integrity
+2. **Index Queries**: Ensure queries use indexed fields for performance
+3. **Batch Operations**: Use batch inserts/updates for large datasets
+4. **Connection Pooling**: Use connection pooling for production applications
+
+### **API Integration**
+1. **Data Sync**: Regular sync from Maersk APIs to keep data current
+2. **Error Handling**: Implement proper error handling for API failures
+3. **Rate Limiting**: Respect API rate limits and implement backoff strategies
+4. **Data Validation**: Validate data before insertion
+
+### **Monitoring**
+1. **Query Performance**: Monitor slow queries and optimize indexes
+2. **Data Quality**: Regular checks for data consistency and completeness
+3. **API Health**: Monitor API availability and response times
+4. **Storage Usage**: Track database growth and plan for scaling

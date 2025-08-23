@@ -1,7 +1,7 @@
--- Migration: Create Maersk Data Model
--- Description: Normalized data model based on Maersk API contracts
--- Tables: vessels, locations, facilities, point_to_point_schedules, transport_legs, deadlines
--- Reference tables: countries, carrier_codes, transport_modes, location_types
+-- ========================================
+-- MAERSK API DATA MODEL MIGRATION
+-- Based on: locations_api.md, deadlines_api.md, p2p_api.md, vessels_api.md
+-- ========================================
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- REFERENCE TABLES
 -- ========================================
 
--- Countries table (ISO 3166-1)
+-- Countries table (ISO 3166-1 standard)
 CREATE TABLE countries (
     country_code VARCHAR(2) PRIMARY KEY,
     country_name VARCHAR(100) NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE countries (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Carrier codes table (SCAC codes)
+-- Carrier codes table (NMFTA SCAC codes)
 CREATE TABLE carrier_codes (
     carrier_code VARCHAR(4) PRIMARY KEY,
     carrier_name VARCHAR(100) NOT NULL,
@@ -52,10 +52,10 @@ CREATE TABLE location_types (
 -- Vessels table
 CREATE TABLE vessels (
     vessel_imo_number VARCHAR(7) PRIMARY KEY,
-    carrier_vessel_code VARCHAR(3),
+    carrier_vessel_code VARCHAR(3) NOT NULL,
     vessel_short_name VARCHAR(18),
     vessel_long_name VARCHAR(35),
-    vessel_flag_code VARCHAR(2),
+    vessel_flag_code VARCHAR(2) REFERENCES countries(country_code),
     vessel_built_year INTEGER,
     vessel_call_sign VARCHAR(10),
     vessel_capacity_teu INTEGER,
@@ -75,17 +75,22 @@ CREATE TABLE locations (
     location_name VARCHAR(100),
     time_zone_id VARCHAR(50),
     carrier_country_geo_id VARCHAR(13),
+    carrier_rkts_code VARCHAR(10),
+    carrier_rkst_code VARCHAR(10),
+    alternate_aliases TEXT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Facilities table
+-- Facilities table (terminals, depots, etc.)
 CREATE TABLE facilities (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     location_geo_id VARCHAR(13) REFERENCES locations(carrier_geo_id),
     facility_type VARCHAR(20),
     facility_name VARCHAR(100),
     carrier_site_geo_id VARCHAR(13),
+    site_un_location_code VARCHAR(5),
+    city_un_location_code VARCHAR(5),
     site_un_location_code VARCHAR(5),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -102,6 +107,18 @@ CREATE TABLE point_to_point_schedules (
     product_valid_from_date DATE,
     product_valid_to_date DATE,
     number_of_product_links INTEGER,
+    cargo_type VARCHAR(10) DEFAULT 'DRY',
+    iso_equipment_code VARCHAR(4) DEFAULT '42G1',
+    stuffing_weight INTEGER DEFAULT 18000,
+    weight_measurement_unit VARCHAR(3) DEFAULT 'KGS',
+    stuffing_volume INTEGER DEFAULT 10,
+    volume_measurement_unit VARCHAR(3) DEFAULT 'MTQ',
+    export_service_mode VARCHAR(3) DEFAULT 'CY',
+    import_service_mode VARCHAR(3) DEFAULT 'CY',
+    start_date DATE,
+    start_date_type VARCHAR(1) DEFAULT 'D',
+    date_range VARCHAR(10) DEFAULT 'P4W',
+    vessel_flag_code VARCHAR(2) REFERENCES countries(country_code),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -124,6 +141,7 @@ CREATE TABLE transport_legs (
     routing_type VARCHAR(1),
     start_location_geo_id VARCHAR(13) REFERENCES locations(carrier_geo_id),
     end_location_geo_id VARCHAR(13) REFERENCES locations(carrier_geo_id),
+    transit_time_minutes INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -149,35 +167,37 @@ CREATE TABLE deadlines (
 -- Vessels indexes
 CREATE INDEX idx_vessels_carrier_code ON vessels(carrier_vessel_code);
 CREATE INDEX idx_vessels_flag_code ON vessels(vessel_flag_code);
+CREATE INDEX idx_vessels_capacity ON vessels(vessel_capacity_teu);
 
 -- Locations indexes
 CREATE INDEX idx_locations_country_code ON locations(country_code);
 CREATE INDEX idx_locations_city_name ON locations(city_name);
 CREATE INDEX idx_locations_un_location_code ON locations(un_location_code);
 CREATE INDEX idx_locations_location_type ON locations(location_type);
+CREATE INDEX idx_locations_time_zone ON locations(time_zone_id);
 
 -- Facilities indexes
 CREATE INDEX idx_facilities_location_geo_id ON facilities(location_geo_id);
 CREATE INDEX idx_facilities_facility_type ON facilities(facility_type);
 
--- Schedules indexes
-CREATE INDEX idx_schedules_carrier_product_id ON point_to_point_schedules(carrier_product_id);
-CREATE INDEX idx_schedules_origin_geo_id ON point_to_point_schedules(collection_origin_geo_id);
-CREATE INDEX idx_schedules_destination_geo_id ON point_to_point_schedules(delivery_destination_geo_id);
-CREATE INDEX idx_schedules_valid_dates ON point_to_point_schedules(product_valid_from_date, product_valid_to_date);
+-- Point-to-point schedules indexes
+CREATE INDEX idx_p2p_carrier_product_id ON point_to_point_schedules(carrier_product_id);
+CREATE INDEX idx_p2p_carrier_code ON point_to_point_schedules(vessel_operator_carrier_code);
+CREATE INDEX idx_p2p_origin ON point_to_point_schedules(collection_origin_geo_id);
+CREATE INDEX idx_p2p_destination ON point_to_point_schedules(delivery_destination_geo_id);
+CREATE INDEX idx_p2p_valid_dates ON point_to_point_schedules(product_valid_from_date, product_valid_to_date);
 
 -- Transport legs indexes
 CREATE INDEX idx_transport_legs_schedule_id ON transport_legs(schedule_id);
-CREATE INDEX idx_transport_legs_vessel_imo ON transport_legs(vessel_imo_number);
-CREATE INDEX idx_transport_legs_departure_date ON transport_legs(departure_date_time);
-CREATE INDEX idx_transport_legs_arrival_date ON transport_legs(arrival_date_time);
-CREATE INDEX idx_transport_legs_transport_mode ON transport_legs(transport_mode);
+CREATE INDEX idx_transport_legs_vessel ON transport_legs(vessel_imo_number);
+CREATE INDEX idx_transport_legs_dates ON transport_legs(departure_date_time, arrival_date_time);
+CREATE INDEX idx_transport_legs_mode ON transport_legs(transport_mode);
 
 -- Deadlines indexes
-CREATE INDEX idx_deadlines_vessel_imo ON deadlines(vessel_imo_number);
+CREATE INDEX idx_deadlines_vessel ON deadlines(vessel_imo_number);
 CREATE INDEX idx_deadlines_voyage ON deadlines(voyage);
-CREATE INDEX idx_deadlines_port_of_load ON deadlines(port_of_load);
-CREATE INDEX idx_deadlines_deadline_local ON deadlines(deadline_local);
+CREATE INDEX idx_deadlines_country ON deadlines(iso_country_code);
+CREATE INDEX idx_deadlines_local ON deadlines(deadline_local);
 
 -- ========================================
 -- ROW LEVEL SECURITY (RLS)
@@ -195,79 +215,33 @@ ALTER TABLE point_to_point_schedules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE transport_legs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE deadlines ENABLE ROW LEVEL SECURITY;
 
--- Create policies for authenticated users (read/write access)
--- Countries
+-- Create RLS policies for authenticated users
 CREATE POLICY "Enable read access for authenticated users" ON countries FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable write access for authenticated users" ON countries FOR ALL USING (auth.role() = 'authenticated');
-
--- Carrier codes
 CREATE POLICY "Enable read access for authenticated users" ON carrier_codes FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable write access for authenticated users" ON carrier_codes FOR ALL USING (auth.role() = 'authenticated');
-
--- Transport modes
 CREATE POLICY "Enable read access for authenticated users" ON transport_modes FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable write access for authenticated users" ON transport_modes FOR ALL USING (auth.role() = 'authenticated');
-
--- Location types
 CREATE POLICY "Enable read access for authenticated users" ON location_types FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable write access for authenticated users" ON location_types FOR ALL USING (auth.role() = 'authenticated');
-
--- Vessels
 CREATE POLICY "Enable read access for authenticated users" ON vessels FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable write access for authenticated users" ON vessels FOR ALL USING (auth.role() = 'authenticated');
-
--- Locations
 CREATE POLICY "Enable read access for authenticated users" ON locations FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable write access for authenticated users" ON locations FOR ALL USING (auth.role() = 'authenticated');
-
--- Facilities
 CREATE POLICY "Enable read access for authenticated users" ON facilities FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable write access for authenticated users" ON facilities FOR ALL USING (auth.role() = 'authenticated');
-
--- Point-to-point schedules
 CREATE POLICY "Enable read access for authenticated users" ON point_to_point_schedules FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable write access for authenticated users" ON point_to_point_schedules FOR ALL USING (auth.role() = 'authenticated');
-
--- Transport legs
 CREATE POLICY "Enable read access for authenticated users" ON transport_legs FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable write access for authenticated users" ON transport_legs FOR ALL USING (auth.role() = 'authenticated');
-
--- Deadlines
 CREATE POLICY "Enable read access for authenticated users" ON deadlines FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "Enable write access for authenticated users" ON deadlines FOR ALL USING (auth.role() = 'authenticated');
+
+-- Create RLS policies for service role (for API operations)
+CREATE POLICY "Enable all access for service role" ON countries FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Enable all access for service role" ON carrier_codes FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Enable all access for service role" ON transport_modes FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Enable all access for service role" ON location_types FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Enable all access for service role" ON vessels FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Enable all access for service role" ON locations FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Enable all access for service role" ON facilities FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Enable all access for service role" ON point_to_point_schedules FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Enable all access for service role" ON transport_legs FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Enable all access for service role" ON deadlines FOR ALL USING (auth.role() = 'service_role');
 
 -- ========================================
 -- SAMPLE DATA FOR REFERENCE TABLES
 -- ========================================
-
--- Insert sample carrier codes
-INSERT INTO carrier_codes (carrier_code, carrier_name, description) VALUES
-('MAEU', 'Maersk A/S', 'Maersk Line'),
-('SEAU', 'Maersk A/S trading as Sealand Americas', 'Sealand Americas'),
-('SEJJ', 'Sealand Europe A/S', 'Sealand Europe'),
-('MCPU', 'Sealand Maersk Asia Pte. Ltd.', 'Sealand Maersk Asia'),
-('MAEI', 'Maersk Line Limited', 'Maersk Line Limited');
-
--- Insert sample transport modes
-INSERT INTO transport_modes (mode_code, mode_name, description) VALUES
-('MVS', 'Mother Vessel', 'Main ocean vessel'),
-('FEF', 'Foreign Feeder', 'Foreign feeder vessel'),
-('FEO', 'Maersk Owned Feeder', 'Maersk owned feeder vessel'),
-('BAR', 'Barge', 'Barge transport'),
-('TRK', 'Truck', 'Truck transport'),
-('RR', 'Railroad', 'Rail transport'),
-('VSF', 'VSA Feeder', 'Vessel Sharing Agreement feeder');
-
--- Insert sample location types
-INSERT INTO location_types (type_code, type_name, description) VALUES
-('CITY', 'City', 'City location'),
-('COUNTRY', 'Country', 'Country location'),
-('TERMINAL', 'Terminal', 'Port terminal'),
-('BARGE_TERMINAL', 'Barge Terminal', 'Barge terminal'),
-('RAIL_TERMINAL', 'Rail Terminal', 'Rail terminal'),
-('CONTAINER_FREIGHT_ST', 'Container Freight Station', 'CFS facility'),
-('CUSTOMER_LOCATION', 'Customer Location', 'Customer premises'),
-('DEPOT', 'Depot', 'Depot facility');
 
 -- Insert sample countries
 INSERT INTO countries (country_code, country_name) VALUES
@@ -280,13 +254,58 @@ INSERT INTO countries (country_code, country_name) VALUES
 ('JP', 'Japan'),
 ('KR', 'South Korea'),
 ('GB', 'United Kingdom'),
-('FR', 'France');
+('FR', 'France'),
+('IT', 'Italy'),
+('ES', 'Spain'),
+('AU', 'Australia'),
+('CA', 'Canada'),
+('MX', 'Mexico'),
+('BR', 'Brazil'),
+('IN', 'India'),
+('RU', 'Russia'),
+('DK', 'Denmark'),
+('NO', 'Norway');
+
+-- Insert sample carrier codes
+INSERT INTO carrier_codes (carrier_code, carrier_name, description) VALUES
+('MAEU', 'Maersk A/S', 'Maersk Line main carrier'),
+('SEAU', 'Maersk A/S trading as Sealand Americas', 'Sealand Americas division'),
+('SEJJ', 'Sealand Europe A/S', 'Sealand Europe division'),
+('MCPU', 'Sealand Maersk Asia Pte. Ltd.', 'Sealand Maersk Asia division'),
+('MAEI', 'Maersk Line Limited', 'Maersk Line Limited division');
+
+-- Insert sample transport modes
+INSERT INTO transport_modes (mode_code, mode_name, description) VALUES
+('BAR', 'Barge', 'Barge transportation'),
+('BCO', 'Barge - Combined Transport', 'Barge combined transport'),
+('DST', 'Doublestack', 'Doublestack rail transport'),
+('FEF', 'Foreign Feeder', 'Foreign feeder vessel'),
+('FEO', 'Maersk Owned Feeder', 'Maersk owned feeder vessel'),
+('MVS', 'Mother Vessel', 'Mother vessel transport'),
+('RCO', 'Railroad - Combined', 'Railroad combined transport'),
+('RR', 'Railroad', 'Railroad transport'),
+('SSH', 'Equalization', 'Equalization transport'),
+('TRK', 'Truck', 'Truck transport'),
+('VSF', 'VSA Feeder', 'VSA feeder vessel'),
+('VSL', 'USA Feeder', 'USA feeder vessel'),
+('VSM', 'VSA Mother VSL', 'VSA mother vessel');
+
+-- Insert sample location types
+INSERT INTO location_types (type_code, type_name, description) VALUES
+('CITY', 'City', 'City location'),
+('COUNTRY', 'Country', 'Country location'),
+('TERMINAL', 'Terminal', 'Port terminal'),
+('BARGE_TERMINAL', 'Barge Terminal', 'Barge terminal'),
+('RAIL_TERMINAL', 'Rail Terminal', 'Rail terminal'),
+('CONTAINER_FREIGHT_ST', 'Container Freight Station', 'CFS facility'),
+('CUSTOMER_LOCATION', 'Customer Location', 'Customer premises'),
+('DEPOT', 'Depot', 'Depot facility');
 
 -- ========================================
 -- TRIGGERS FOR UPDATED_AT
 -- ========================================
 
--- Function to update updated_at timestamp
+-- Function to update updated_at column
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -295,7 +314,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Create triggers for all tables with updated_at
+-- Create triggers for all tables
 CREATE TRIGGER update_countries_updated_at BEFORE UPDATE ON countries FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_carrier_codes_updated_at BEFORE UPDATE ON carrier_codes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_transport_modes_updated_at BEFORE UPDATE ON transport_modes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
