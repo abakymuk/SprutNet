@@ -263,10 +263,10 @@ INSERT INTO location_types (type_code, type_name, description) VALUES
 ('CITY', 'City', 'City location'),
 ('COUNTRY', 'Country', 'Country location'),
 ('TERMINAL', 'Terminal', 'Port terminal'),
-('BARGE TERMINAL', 'Barge Terminal', 'Barge terminal'),
-('RAIL TERMINAL', 'Rail Terminal', 'Rail terminal'),
-('CONTAINER FREIGHT STATION', 'Container Freight Station', 'CFS facility'),
-('CUSTOMER LOCATION', 'Customer Location', 'Customer premises'),
+('BARGE_TERMINAL', 'Barge Terminal', 'Barge terminal'),
+('RAIL_TERMINAL', 'Rail Terminal', 'Rail terminal'),
+('CONTAINER_FREIGHT_ST', 'Container Freight Station', 'CFS facility'),
+('CUSTOMER_LOCATION', 'Customer Location', 'Customer premises'),
 ('DEPOT', 'Depot', 'Depot facility');
 
 -- Insert sample countries
