@@ -109,6 +109,11 @@ pnpm lint
 - **Деплой на production** при push в `main`
 - **Проверка безопасности** еженедельно
 
+#### 🌐 Деплой
+
+- **Staging**: https://sprutnet-staging.vercel.app (develop branch)
+- **Production**: https://sprutnet.vercel.app (main branch)
+
 Подробная инструкция: [CI/CD Setup Guide](.github/CICD_SETUP.md)
 
 ### Структура тикетов
