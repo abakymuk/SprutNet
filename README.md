@@ -2,6 +2,8 @@
 
 Планировщик морских перевозок с использованием API Maersk и Supabase.
 
+> 🧪 **Тестовый PR** - Проверка Vercel деплоя через GitHub Actions
+
 ## 🛠 Технологический стек
 
 - **Frontend**: Next.js 15 (App Router) + TypeScript + Tailwind CSS
