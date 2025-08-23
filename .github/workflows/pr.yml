@@ -4,6 +4,14 @@ on:
   pull_request:
     branches: [ main, develop ]
 
+env:
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
+  MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
+  MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
+
 jobs:
   changes:
     name: Detect Changes
@@ -67,13 +75,6 @@ jobs:
         
       - name: Build
         run: pnpm build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
-          MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
-          MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
 
   quality-api:
     name: Quality Gate (API)
@@ -111,13 +112,6 @@ jobs:
         
       - name: Build
         run: pnpm build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
-          MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
-          MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
 
   security:
     name: Security Audit
