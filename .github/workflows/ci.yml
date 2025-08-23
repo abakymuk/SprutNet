@@ -133,8 +133,19 @@ jobs:
           MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
           MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
           
-      - name: Clean .vercel directory
-        run: rm -rf .vercel
+      - name: Clean .vercel directory and Vercel cache
+        run: |
+          echo "🧹 Cleaning Vercel directories and cache..."
+          rm -rf .vercel
+          rm -rf ~/.vercel
+          rm -rf .vercelignore
+          echo "✅ Vercel cleanup completed"
+          
+      - name: Verify Vercel project linking
+        run: |
+          echo "🔗 Verifying Vercel project linking..."
+          npx vercel --version
+          echo "✅ Vercel CLI is available"
         
       - name: Deploy to Vercel (Staging)
         uses: amondnet/vercel-action@v25
@@ -179,8 +190,19 @@ jobs:
           MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
           MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
           
-      - name: Clean .vercel directory
-        run: rm -rf .vercel
+      - name: Clean .vercel directory and Vercel cache
+        run: |
+          echo "🧹 Cleaning Vercel directories and cache..."
+          rm -rf .vercel
+          rm -rf ~/.vercel
+          rm -rf .vercelignore
+          echo "✅ Vercel cleanup completed"
+          
+      - name: Verify Vercel project linking
+        run: |
+          echo "🔗 Verifying Vercel project linking..."
+          npx vercel --version
+          echo "✅ Vercel CLI is available"
         
       - name: Deploy to Vercel (Production - Staging First)
         uses: amondnet/vercel-action@v25
