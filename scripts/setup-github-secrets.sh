@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/opt/homebrew/bin/bash
 
 # Скрипт для добавления GitHub Secrets
 # Использование: ./scripts/setup-github-secrets.sh
@@ -32,47 +32,59 @@ fi
 REPO="abakymuk/SprutNet"
 echo -e "${YELLOW}📦 Репозиторий: $REPO${NC}"
 
-# Секреты для добавления
-declare -A secrets=(
-    ["NEXT_PUBLIC_SUPABASE_URL"]="https://kzbtwgpedbojxnfiprsw.supabase.co"
-    ["NEXT_PUBLIC_SUPABASE_ANON_KEY"]="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6YnR3Z3BlZGJvanhuZmlwcnN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NjcwMTYsImV4cCI6MjA3MTU0MzAxNn0.l3Oic3OTo0_Fus6NBYIUuuzL5vhCWGI5dol8AerrMzo"
-    ["SUPABASE_SERVICE_ROLE_KEY"]="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6YnR3Z3BlZGJvanhuZmlwcnN3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTk2NzAxNiwiZXhwIjoyMDcxNTQzMDE2fQ.OP238r6fmI8NHNc4IujFu3BhWgiUGXw_12VTW1pMMO4"
-    ["MAERSK_API_KEY"]="IR6PjVz4jkGu8RaazMat1Tz0l9NevMWd"
-    ["MAERSK_API_SECRET"]="CnIcg3YgUUtSp8a3"
-    ["MAERSK_API_BASE_URL"]="https://api.maersk.com"
-)
-
-# Секреты, которые нужно добавить вручную
-declare -A manual_secrets=(
-    ["VERCEL_TOKEN"]="Получите из https://vercel.com/account/tokens"
-    ["VERCEL_ORG_ID"]="Получите из настроек проекта Vercel"
-    ["VERCEL_PROJECT_ID"]="Получите из настроек проекта Vercel"
-)
-
+# Секреты для добавления (совместимость с bash 3.2)
 echo -e "${YELLOW}🔐 Добавление автоматических секретов...${NC}"
 
-# Добавление автоматических секретов
-for secret_name in "${!secrets[@]}"; do
-    secret_value="${secrets[$secret_name]}"
-    
-    echo -e "${YELLOW}📝 Добавление: $secret_name${NC}"
-    
-    if gh secret set "$secret_name" --repo "$REPO" --body "$secret_value"; then
-        echo -e "${GREEN}✅ $secret_name добавлен${NC}"
-    else
-        echo -e "${RED}❌ Ошибка при добавлении $secret_name${NC}"
-    fi
-done
+# Supabase Secrets
+echo -e "${YELLOW}📝 Добавление: NEXT_PUBLIC_SUPABASE_URL${NC}"
+if gh secret set "NEXT_PUBLIC_SUPABASE_URL" --repo "$REPO" --body "https://kzbtwgpedbojxnfiprsw.supabase.co"; then
+    echo -e "${GREEN}✅ NEXT_PUBLIC_SUPABASE_URL добавлен${NC}"
+else
+    echo -e "${RED}❌ Ошибка при добавлении NEXT_PUBLIC_SUPABASE_URL${NC}"
+fi
+
+echo -e "${YELLOW}📝 Добавление: NEXT_PUBLIC_SUPABASE_ANON_KEY${NC}"
+if gh secret set "NEXT_PUBLIC_SUPABASE_ANON_KEY" --repo "$REPO" --body "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6YnR3Z3BlZGJvanhuZmlwcnN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5NjcwMTYsImV4cCI6MjA3MTU0MzAxNn0.l3Oic3OTo0_Fus6NBYIUuuzL5vhCWGI5dol8AerrMzo"; then
+    echo -e "${GREEN}✅ NEXT_PUBLIC_SUPABASE_ANON_KEY добавлен${NC}"
+else
+    echo -e "${RED}❌ Ошибка при добавлении NEXT_PUBLIC_SUPABASE_ANON_KEY${NC}"
+fi
+
+echo -e "${YELLOW}📝 Добавление: SUPABASE_SERVICE_ROLE_KEY${NC}"
+if gh secret set "SUPABASE_SERVICE_ROLE_KEY" --repo "$REPO" --body "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6YnR3Z3BlZGJvanhuZmlwcnN3Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTk2NzAxNiwiZXhwIjoyMDcxNTQzMDE2fQ.OP238r6fmI8NHNc4IujFu3BhWgiUGXw_12VTW1pMMO4"; then
+    echo -e "${GREEN}✅ SUPABASE_SERVICE_ROLE_KEY добавлен${NC}"
+else
+    echo -e "${RED}❌ Ошибка при добавлении SUPABASE_SERVICE_ROLE_KEY${NC}"
+fi
+
+# Maersk API Secrets
+echo -e "${YELLOW}📝 Добавление: MAERSK_API_KEY${NC}"
+if gh secret set "MAERSK_API_KEY" --repo "$REPO" --body "IR6PjVz4jkGu8RaazMat1Tz0l9NevMWd"; then
+    echo -e "${GREEN}✅ MAERSK_API_KEY добавлен${NC}"
+else
+    echo -e "${RED}❌ Ошибка при добавлении MAERSK_API_KEY${NC}"
+fi
+
+echo -e "${YELLOW}📝 Добавление: MAERSK_API_SECRET${NC}"
+if gh secret set "MAERSK_API_SECRET" --repo "$REPO" --body "CnIcg3YgUUtSp8a3"; then
+    echo -e "${GREEN}✅ MAERSK_API_SECRET добавлен${NC}"
+else
+    echo -e "${RED}❌ Ошибка при добавлении MAERSK_API_SECRET${NC}"
+fi
+
+echo -e "${YELLOW}📝 Добавление: MAERSK_API_BASE_URL${NC}"
+if gh secret set "MAERSK_API_BASE_URL" --repo "$REPO" --body "https://api.maersk.com"; then
+    echo -e "${GREEN}✅ MAERSK_API_BASE_URL добавлен${NC}"
+else
+    echo -e "${RED}❌ Ошибка при добавлении MAERSK_API_BASE_URL${NC}"
+fi
 
 echo ""
 echo -e "${YELLOW}🔐 Секреты для ручного добавления:${NC}"
 echo "=================================="
-
-# Вывод секретов для ручного добавления
-for secret_name in "${!manual_secrets[@]}"; do
-    secret_description="${manual_secrets[$secret_name]}"
-    echo -e "${YELLOW}$secret_name:${NC} $secret_description"
-done
+echo -e "${YELLOW}VERCEL_TOKEN:${NC} Получите из https://vercel.com/account/tokens"
+echo -e "${YELLOW}VERCEL_ORG_ID:${NC} Получите из настроек проекта Vercel"
+echo -e "${YELLOW}VERCEL_PROJECT_ID:${NC} Получите из настроек проекта Vercel"
 
 echo ""
 echo -e "${GREEN}✅ Настройка завершена!${NC}"
