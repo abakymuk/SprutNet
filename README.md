@@ -166,3 +166,4 @@ CREATE TABLE reminders (
 ## 📄 Лицензия
 
 MIT License
+# CI/CD Test
