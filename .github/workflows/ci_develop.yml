@@ -70,6 +70,7 @@ jobs:
     needs: quality
     environment: staging
     timeout-minutes: 15
+
     
     steps:
       - name: Checkout code
@@ -110,3 +111,9 @@ jobs:
           flyctl deploy --app sprutnet-staging --config fly.staging.toml --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
+          MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
+          MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
