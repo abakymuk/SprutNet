@@ -57,6 +57,7 @@ jobs:
             
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        working-directory: .
         
       - name: Lint
         run: pnpm lint

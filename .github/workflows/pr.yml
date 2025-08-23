@@ -70,6 +70,7 @@ jobs:
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        working-directory: .
         
       - name: Security audit
         run: pnpm audit --audit-level moderate

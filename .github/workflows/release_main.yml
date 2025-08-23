@@ -29,6 +29,7 @@ jobs:
           
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        working-directory: .
         
       - name: Create Release
         uses: release-drafter/release-drafter@v5
