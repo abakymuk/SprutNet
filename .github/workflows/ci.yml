@@ -141,11 +141,22 @@ jobs:
           rm -rf .vercelignore
           echo "✅ Vercel cleanup completed"
           
-      - name: Verify Vercel project linking
+      - name: Link Vercel project
         run: |
-          echo "🔗 Verifying Vercel project linking..."
-          npx vercel --version
-          echo "✅ Vercel CLI is available"
+          echo "🔗 Linking Vercel project..."
+          npx vercel link --yes --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          echo "✅ Vercel project linked successfully"
+          
+      - name: Verify project linking
+        run: |
+          echo "🔍 Verifying project linking..."
+          if [ -f ".vercel/project.json" ]; then
+            echo "✅ Project linking verified - .vercel/project.json exists"
+            cat .vercel/project.json
+          else
+            echo "❌ Project linking failed - .vercel/project.json not found"
+            exit 1
+          fi
         
       - name: Deploy to Vercel (Staging)
         uses: amondnet/vercel-action@v25
@@ -198,11 +209,22 @@ jobs:
           rm -rf .vercelignore
           echo "✅ Vercel cleanup completed"
           
-      - name: Verify Vercel project linking
+      - name: Link Vercel project
         run: |
-          echo "🔗 Verifying Vercel project linking..."
-          npx vercel --version
-          echo "✅ Vercel CLI is available"
+          echo "🔗 Linking Vercel project..."
+          npx vercel link --yes --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }} --project=${{ secrets.VERCEL_PROJECT_ID }}
+          echo "✅ Vercel project linked successfully"
+          
+      - name: Verify project linking
+        run: |
+          echo "🔍 Verifying project linking..."
+          if [ -f ".vercel/project.json" ]; then
+            echo "✅ Project linking verified - .vercel/project.json exists"
+            cat .vercel/project.json
+          else
+            echo "❌ Project linking failed - .vercel/project.json not found"
+            exit 1
+          fi
         
       - name: Deploy to Vercel (Production - Staging First)
         uses: amondnet/vercel-action@v25
