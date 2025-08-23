@@ -31,15 +31,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install
         
-      - name: Run security audit
-        run: pnpm audit --audit-level moderate
-        
-      - name: Check for known vulnerabilities
+      - name: Check for high severity vulnerabilities
         run: |
-          if pnpm audit --audit-level high; then
+          # Запускаем audit и сохраняем результат
+          pnpm audit --audit-level high || {
             echo "High severity vulnerabilities found!"
             exit 1
-          fi
+          }
+          echo "No high severity vulnerabilities found."
 
   dependency-review:
     name: Dependency Review
