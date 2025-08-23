@@ -1,0 +1,1001 @@
+openapi: 3.0.0
+info:
+  version: 2.2.0
+  title: Products API (Point-to-Point Schedules)
+  description: >
+    Searches the A.P. Moller-Maersk A/S ("MAERSK") Product Catalogue for
+    preferred cargo routings and sailing schedule information based on a
+    specific origin and destination.
+
+
+    # Overview
+
+    This service returns A.P. Moller-Maersk A/S Ocean Products for preferred
+    cargo routings with point-to-point schedules based on a specific origin and
+    destination.
+
+
+    This endpoint requires **ONE OF** the following combinations of parameters
+    to identify a `collectionOrigin` and `deliveryDestination`:
+
+    1. `countryCode` (mandatory) + `cityName` (mandatory) + `UNLocationCode`
+    (optional) + `UNRegionCode` (optional)
+
+    2. `carrierGeoID` (mandatory)
+
+
+    **Note:** When more than one collectionOrigin or deliveryDestination
+    location is retrieved by the query parameters provided by the consumer, a
+    list of valid city locations  against 409 HTTP code will be returned that
+    can be used to query for available MAERSK Ocean Products.
+
+
+    # Who can get access?
+
+    All registered users of the Maersk Developer Portal can get access to the
+    API.
+
+
+    # Getting started
+
+    After creating an account, **<a href="https://developer.maersk.com/login"
+    target="_blank" style="font-weight: bold;"><u>login</u></a>** and create an
+    App to enable this API product for your Consumer Key. For step-by-step
+    instructions, please refer to our **<a
+    href="https://developer.maersk.com/support/getting-started-api"
+    target="_blank" style="font-weight: bold;"><u>Getting Started
+    Guide</u></a>**.
+
+
+    # How many calls can I make?
+
+    Traffic and spike arrest limits are configured at the consumer key level for
+    each API Product as detailed in the table below. If these limits are
+    exceeded, the request is rejected with a 429 Too Many Requests HTTP status
+    code.
+
+
+    | Quota per Consumer Key | Traffic Surge Rate Limit per Consumer Key |
+
+    |------------------------|-------------------------------------------|
+
+    | 20,000 calls per hour  | 10 calls per second                       |
+
+
+    # Release Notes
+
+    | Version | Date | Notes |
+
+    |---------|------|-------|
+
+    | 2.2.0   | 2024-07-26 | added optional cityUNLocationCode &
+    siteUNLocationCode in the output facilities object; enabled carrierCityGeoId
+    in the output facilities object |
+
+    | 2.1.1   | 2023-12-06 | fixed regex for CollectionOriginCityName &
+    deliveryDestinationCityName and removed unnecessary parameter schemas for
+    carrierPortOfLoadGeoID and carrierPortOfDischargeGeoID |
+
+    | 2.1.0   | 2022-05-19 | added optional output vesselOperatorCarrierCode |
+
+    | 2.0.1   | 2022-04-01 | fixed regex for cityName |
+
+    | 2.0.0   |      | Initial Draft | 
+  contact:
+    url: https://developer.maersk.com/contact-us
+servers:
+  - url: https://api.maersk.com/products
+    description: Production Environment
+  - url: https://api-stage.maersk.com/products
+    description: Pre-Production Environment
+tags:
+  - name: Ocean Products
+    description: Ocean Products operations
+security:
+  - ApiKeyHeader: []
+paths:
+  /ocean-products:
+    get:
+      tags:
+        - Ocean Products
+      summary: Retrieves available MAERSK Ocean Products
+      description: |
+        Returns A.P. Moller-Maersk A/S Ocean Products for preferred cargo
+        routings with point to point schedules based on a specific origin and
+        destination.\
+
+        This endpoint requires **ONE OF** the following combinations of
+        parameters to identify a collectionOrigin and deliveryDestination:
+
+        1. `countryCode` (mandatory) + `cityName` (mandatory) + UNLocationCode
+        (optional) + UNRegionCode (optional)
+
+        2. `carrierGeoID` (mandatory)
+
+        Note:  When more than one collectionOrigin or deliveryDestination
+        location is retrieved by the query parameters provided by the consumer,
+        a list of valid city locations against 409 HTTP code will be returned
+        that can be used to query for available MAERSK Ocean Products.
+      parameters:
+        - $ref: '#/components/parameters/CarrierCollectionOriginGeoID'
+        - $ref: '#/components/parameters/CarrierDeliveryDestinationGeoID'
+        - $ref: '#/components/parameters/CollectionOriginCountryCode'
+        - $ref: '#/components/parameters/CollectionOriginCityName'
+        - $ref: '#/components/parameters/CollectionOriginUNLocationCode'
+        - $ref: '#/components/parameters/CollectionOriginUNRegionCode'
+        - $ref: '#/components/parameters/DeliveryDestinationCountryCode'
+        - $ref: '#/components/parameters/DeliveryDestinationCityName'
+        - $ref: '#/components/parameters/DeliveryDestinationUNLocationCode'
+        - $ref: '#/components/parameters/DeliveryDestinationUNRegionCode'
+        - $ref: '#/components/parameters/VesselOperatorCarrierCode'
+        - $ref: '#/components/parameters/CargoType'
+        - $ref: '#/components/parameters/ISOEquipmentCode'
+        - $ref: '#/components/parameters/StuffingWeight'
+        - $ref: '#/components/parameters/WeightMeasurementUnit'
+        - $ref: '#/components/parameters/StuffingVolume'
+        - $ref: '#/components/parameters/VolumeMeasurementUnit'
+        - $ref: '#/components/parameters/ExportServiceMode'
+        - $ref: '#/components/parameters/ImportServiceMode'
+        - $ref: '#/components/parameters/StartDate'
+        - $ref: '#/components/parameters/StartDateType'
+        - $ref: '#/components/parameters/DateRange'
+        - $ref: '#/components/parameters/VesselFlagCode'
+      responses:
+        '200':
+          description: |
+            Returns a list of preferred A.P. Moller-Maersk A/S ocean products
+            with multiple schedules
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  oceanProducts:
+                    $ref: '#/components/schemas/OceanProducts'
+            application/stream+json:
+              schema:
+                type: object
+                properties:
+                  oceanProducts:
+                    $ref: '#/components/schemas/OceanProducts'
+            text/event-stream:
+              schema:
+                type: object
+                properties:
+                  oceanProducts:
+                    $ref: '#/components/schemas/OceanProducts'
+        '400':
+          description: |
+            Bad request; the request is unacceptable often due to a missing or
+            invalid parameter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: The requested resource cannot be found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '405':
+          description: Method not allowed on resource
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '409':
+          description: |
+            Conflict; more than one collectionOrigin or deliveryDestination
+            location is retrieved by the query parameters provided by the
+            consumer, a list of valid city locations will be returned that can
+            be used to query for available MAERSK Ocean Products.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AvailableLocations'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      deprecated: false
+components:
+  securitySchemes:
+    ApiKeyHeader:
+      type: apiKey
+      name: Consumer-Key
+      in: header
+      description: |
+        The Consumer Key issued for your registered application must be provided
+        with every request
+  schemas:
+    Product:
+      type: object
+      properties:
+        carrierProductId:
+          type: string
+          description: |
+            A.P. Moller-Maersk A/S assigned ID for the Ocean Product retrieved
+            based on a Specific Origin and Destination
+          example: '2992518177'
+        carrierProductSequenceId:
+          type: string
+          description: |
+            A.P. Moller-Maersk A/S assigned sequence ID for the Ocean Product
+            retrieved based on Specific Origin and Destination
+          example: '1'
+        productValidFromDate:
+          type: string
+          description: |
+            The effective date for the Ocean Product in YYYY-MM-DD format.  This
+            parameter is null if no Valid From Date exists.
+          format: date
+          example: '2020-06-12'
+        productValidToDate:
+          type: string
+          description: |
+            The expiration date for the Ocean Product in YYYY-MM-DD format. 
+            This parameter is null if no expiration date exists.
+          format: date
+          example: '2020-07-12'
+        numberOfProductLinks:
+          type: string
+          description: |
+            Number of links in the Ocean Product from the Origin to the
+            Destination
+          example: '5'
+    Location:
+      type: object
+      required:
+        - countryCode
+        - cityName
+      properties:
+        carrierCityGeoID:
+          type: string
+          description: |
+            Unique GEO ID used internally by A.P. Moller-Maersk A/S to identify
+            the city of the Port\
+
+            Note: this API returns either `carrierCityGeoID` or
+            `carrierSiteGeoID` depends on the locationType
+          example: 1NTIEFSAX49JW
+        UNLocationCode:
+          type: string
+          description: |
+            United Nations Code for Trade and Transport Locations (UN/LOCODE) as
+            defined by the UNECE for the City\
+
+            <https://www.unece.org/cefact/locode/welcome.html>
+          example: USHOU
+        countryCode:
+          type: string
+          description: |
+            Two-letter country code defined in the ISO 3166-1 standard published
+            by the International Organization for Standardization (ISO)\
+
+            <https://www.iso.org/iso-3166-country-codes.html>
+          example: US
+        cityName:
+          type: string
+          description: Name of the City
+          example: Houston
+        UNRegionCode:
+          type: string
+          description: |
+            Two-letter Region Code of the State or Country Subdivision as
+            defined by the UNECE\
+
+            <http://www.unece.org/cefact/locode/subdivisions.html>
+          example: TX
+    Facility:
+      type: object
+      properties:
+        carrierSiteGeoID:
+          type: string
+          description: |
+            Unique GEO ID used internally by A.P. Moller-Maersk A/S to identify
+            the site such as a terminal or depot\
+
+            Note: this API returns either `carrierCityGeoID` or
+            `carrierSiteGeoID` depends on the locationType
+          example: 1NTIEFSAX49JW
+        locationType:
+          type: string
+          description: type of location
+          example: TERMINAL
+        locationName:
+          type: string
+          description: Name of the Location
+          example: BAY PORT CONTAINER TERMINAL
+    Vessel:
+      type: object
+      description: |
+        Vessel information to be provided when the `transportMode` is water
+        based and registered internally by A.P. Moller-Maersk A/S
+      properties:
+        vesselIMONumber:
+          type: string
+          description: |
+            International Maritime Organization (IMO) number unique to a vessel\
+            <http://www.imo.org/en/Pages/Default.aspx>
+          example: '9244946'
+        carrierVesselCode:
+          type: string
+          description: |
+            A unique 3-character code assigned by the carrier for internal
+            purposes.
+          example: 37Z
+        vesselName:
+          type: string
+          description: |
+            The first 35 characters of the vessel name
+          example: MAERSK MC-KINNEY MOLLER
+    TransportPlan:
+      type: object
+      properties:
+        departureDateTime:
+          type: string
+          format: date-time
+          description: |
+            The local date and time of departure in ISO 8601 format. In case of
+            a port omission, the field is populated with the previously shared
+            value by default.
+          example: '2020-03-20T10:00:00'
+        arrivalDateTime:
+          type: string
+          format: date-time
+          description: |
+            The local date and time of arrival in ISO 8601 format. In case of a
+            port omission, the field is populated with the previously shared
+            value by default.
+          example: '2020-03-20T10:00:00'
+    Transport:
+      type: object
+      properties:
+        vessel:
+          $ref: '#/components/schemas/Vessel'
+        transportMode:
+          type: string
+          description: |
+            The mode of transportation for the route link
+            * BAR - Barge
+            * BCO - Barge - Combined Transport
+            * DST - Doublestack
+            * FEF - Foreign Feeder
+            * FEO - Maersk Owned Feeder
+            * MVS - Mother Vessel
+            * RCO - Railroad - Combined
+            * RR - Railroad
+            * SSH - Equalization
+            * TRK - Truck
+            * VSF - VSA Feeder
+            * VSL - USA Feeder
+            * VSM - VSA Mother VSL
+          example: MVS
+        carrierTradeLaneName:
+          type: string
+          description: |
+            When the transportMode is vessel, the name of the trade lane
+            generally defined by the route source and destination; only visible
+            when `transportMode` is water based.
+          example: NAM/FEA
+        carrierDepartureVoyageNumber:
+          type: string
+          description: |
+            4-character export voyage code unique to the vessel departure; only
+            visible when `transportMode` is water based.
+          example: 014W
+        inducementLinkFlag:
+          type: string
+          description: |
+            Indicator that defines the link as a port call offered as an
+            inducement
+          example: 'false'
+        carrierServiceCode:
+          type: string
+          description: |
+            3-character service code assigned by the carrier for the
+            service/route
+          example: '600'
+        carrierServiceName:
+          type: string
+          description: Name assigned by the carrier for the service/route
+          example: MECL1
+        linkDirection:
+          type: string
+          description: The cardinal direction for the route link
+          example: S
+        carrierCode:
+          type: string
+          description: |
+            RKST system Carrier Code as defined by A.P. Moller-Maersk A/S for
+            the scheduled carrier
+          example: E1400M
+        routingType:
+          type: string
+          description: |
+            Describes the type of route link
+            * P: Export S/D link (Pickup)
+            * E: Export hub routing
+            * M: Main routing
+            * I: Import hub routing
+            * D: Import S/D link (Delivery)
+            * T: Inter Terminal Transfer
+          example: E
+    TransportLeg:
+      allOf:
+        - $ref: '#/components/schemas/TransportPlan'
+        - type: object
+          description: Each transport move constitutes a transport leg
+          properties:
+            transport:
+              $ref: '#/components/schemas/Transport'
+            facilities:
+              type: object
+              properties:
+                startLocation:
+                  allOf:
+                    - $ref: '#/components/schemas/Location'
+                    - $ref: '#/components/schemas/Facility'
+                    - $ref: '#/components/schemas/UNLocationCodes'
+                endLocation:
+                  allOf:
+                    - $ref: '#/components/schemas/Location'
+                    - $ref: '#/components/schemas/Facility'
+                    - $ref: '#/components/schemas/UNLocationCodes'
+    TransportSchedule:
+      allOf:
+        - $ref: '#/components/schemas/TransportPlan'
+        - type: object
+          description: |
+            Schedule for the Ocean Products retrieved based on a Specific Origin
+            and Destination
+          properties:
+            firstDepartureVessel:
+              $ref: '#/components/schemas/Vessel'
+            transitTime:
+              type: string
+              description: |
+                An approximation of the transit time for the Ocean Product in
+                minutes.  Time zone adjustment is not taken into account.
+              example: '37560'
+            facilities:
+              type: object
+              properties:
+                collectionOrigin:
+                  allOf:
+                    - $ref: '#/components/schemas/Location'
+                    - $ref: '#/components/schemas/Facility'
+                    - $ref: '#/components/schemas/UNLocationCodes'
+                deliveryDestination:
+                  allOf:
+                    - $ref: '#/components/schemas/Location'
+                    - $ref: '#/components/schemas/Facility'
+                    - $ref: '#/components/schemas/UNLocationCodes'
+            transportLegs:
+              type: array
+              description: The details for the individual schedule
+              items:
+                $ref: '#/components/schemas/TransportLeg'
+    TransportSchedules:
+      type: object
+      description: |
+        Schedules for the Ocean Products retrieved based on a Specific Origin
+        and Destination
+      properties:
+        transportSchedules:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransportSchedule'
+    OceanProducts:
+      type: array
+      description: |
+        The Preferred A.P. Moller-Maersk A/S Ocean Products with Point to Point
+        Future Schedules based on a Specific Origin and Destination
+      items:
+        allOf:
+          - type: object
+            properties:
+              vesselOperatorCarrierCode:
+                type: string
+                description: |
+                  National Motor Freight Traffic Association (NMFTA) - Standard
+                  Carrier Alpha Codes (SCAC) 2019:\
+
+                  <http://www.nmfta.org/pages/scac>
+
+                  - MAEU - Maersk A/S
+
+                  - SEAU - Maersk A/S* trading as Sealand Americas
+
+                  - SEJJ - Sealand Europe A/S
+
+                  - MCPU - Sealand Maersk Asia Pte. Ltd.
+
+                  - MAEI - Maersk Line Limited
+                example: MAEU
+          - $ref: '#/components/schemas/Product'
+          - $ref: '#/components/schemas/TransportSchedules'
+    AvailableLocations:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: message and suggestion for multiple locations found case
+          example: |
+            more than one collectionOrigin or deliveryDestination location is
+            retrieved by the input query parameters, please check the available
+            locations list and resend the API request with the corresponding
+            carrierCityGeoID
+        collectionOriginLocations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location'
+        deliveryDestinationLocations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Location'
+    UNLocationCodes:
+      type: object
+      properties:
+        UNLocationCode:
+          type: string
+          description: >
+            United Nations Code for Trade and Transport Locations (UN/LOCODE) as
+
+            defined by the UNECE for the City\
+
+
+            <https://www.unece.org/cefact/locode/welcome.html>
+
+
+            Note: to avoid confusion, this attribute is separated into
+            `cityUNLocationCode` + `siteUNLocationCode` from API Version V.2.2,
+            will be removed from the next major version e.g V.3.0.0
+          example: USHOU
+        cityUNLocationCode:
+          type: string
+          description: >
+            United Nations Code for Trade and Transport Locations (UN/LOCODE) as
+
+            defined by the UNECE for the City\
+
+
+            <https://www.unece.org/cefact/locode/welcome.html>
+
+
+            Note: it's important to use `cityUNLocationCode` to place booking
+            but not `siteUNLocationCode`
+          example: USHOU
+        siteUNLocationCode:
+          type: string
+          description: >
+            United Nations Code for Trade and Transport Locations (UN/LOCODE) as
+
+            defined by the UNECE for the Site\
+
+
+            <https://www.unece.org/cefact/locode/welcome.html>
+
+
+            Note: it's important to use `cityUNLocationCode` to place booking
+            but not `siteUNLocationCode`
+          example: USHOO
+    ApiError:
+      type: object
+      required:
+        - method
+        - requestUri
+        - status
+        - timestamp
+        - message
+        - debugMessage
+      properties:
+        method:
+          type: string
+          description: The request method type e.g. GET, POST.
+        requestUri:
+          type: string
+          description: The request URI.
+        status:
+          type: string
+          description: The textual representation of the response status.
+        timestamp:
+          type: string
+          description: The date and time (dd-MM-yyyy hh:mm:ss) the error occured.
+        message:
+          type: string
+          description: High level error message.
+        debugMessage:
+          type: string
+          description: Detailed error message.
+        subErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiValidationError'
+          description: The list of invalid fields in the request.
+    ApiValidationError:
+      type: object
+      required:
+        - field
+        - rejectedValue
+        - message
+      properties:
+        field:
+          type: string
+          description: The field that has failed validation.
+        rejectedValue:
+          type: string
+          description: The value that has failed validation.
+        message:
+          type: string
+          description: The reason and advice for failed validation.
+  parameters:
+    CarrierCollectionOriginGeoID:
+      name: carrierCollectionOriginGeoID
+      in: query
+      description: |
+        Unique GEO ID used internally by A.P. Moller-Maersk A/S to identify the
+        collectionOrigin City
+      required: false
+      schema:
+        type: string
+        pattern: '[a-zA-Z0-9]{13}'
+        nullable: true
+      examples:
+        emptyValue:
+          value: null
+        exampleValue:
+          value: 183AKT65YAHRZ
+    CarrierDeliveryDestinationGeoID:
+      name: carrierDeliveryDestinationGeoID
+      in: query
+      description: |
+        Unique GEO ID used internally by A.P. Moller-Maersk A/S to identify the
+        deliveryDestination City
+      required: false
+      schema:
+        type: string
+        pattern: '[a-zA-Z0-9]{13}'
+        nullable: true
+      examples:
+        emptyValue:
+          value: null
+        exampleValue:
+          value: 1JUKNJGWHQBNJ
+    CollectionOriginCityName:
+      name: collectionOriginCityName
+      in: query
+      description: |
+        Name of the City of Origin
+      required: false
+      schema:
+        type: string
+        pattern: "^([a-zA-Z0-9\\(\\)\x80-ɏ '.,-]){1,50}$"
+        example: Houston
+    CollectionOriginUNRegionCode:
+      name: collectionOriginUNRegionCode
+      in: query
+      description: |
+        Two-letter Region Code of the State or Country Subdivision for the
+        Destination as defined by the UNECE\
+
+        <http://www.unece.org/cefact/locode/subdivisions.html>
+      required: false
+      schema:
+        type: string
+        pattern: '[a-zA-Z0-9]{1,3}'
+        example: TX
+    CollectionOriginCountryCode:
+      name: collectionOriginCountryCode
+      in: query
+      description: |
+        Two-letter country code for the Origin defined in the ISO 3166-1
+        standard published by the International Organization for Standardization
+        (ISO)\
+
+        <https://www.iso.org/iso-3166-country-codes.html>
+      required: false
+      schema:
+        type: string
+        pattern: '[a-zA-Z]{2}'
+        example: US
+    CollectionOriginUNLocationCode:
+      name: collectionOriginUNLocationCode
+      in: query
+      description: |
+        United Nations Code for the City of Origin for Trade and Transport
+        Locations (UN/LOCODE) as defined by the UNECE\
+
+        <https://www.unece.org/cefact/locode/welcome.html>
+      required: false
+      schema:
+        type: string
+        pattern: '[a-zA-Z]{5}'
+        example: USHOU
+    DeliveryDestinationCityName:
+      name: deliveryDestinationCityName
+      in: query
+      description: |
+        Name of the City for the Destination
+      required: false
+      schema:
+        type: string
+        pattern: "^([a-zA-Z0-9\\(\\)\x80-ɏ '.,-]){1,50}$"
+        example: Rotterdam
+    DeliveryDestinationUNRegionCode:
+      name: deliveryDestinationUNRegionCode
+      in: query
+      description: |
+        Two-letter Region Code of the State or Country Subdivision for the
+        Destination as defined by the UNECE\
+
+        <http://www.unece.org/cefact/locode/subdivisions.html>
+      required: false
+      schema:
+        type: string
+        pattern: '[a-zA-Z0-9]{1,3}'
+        example: ZH
+    DeliveryDestinationCountryCode:
+      name: deliveryDestinationCountryCode
+      in: query
+      description: |
+        Two-letter country code for the Destination defined in the ISO 3166-1
+        standard published by the International Organization for Standardization
+        (ISO)\
+
+        <https://www.iso.org/iso-3166-country-codes.html>
+      required: false
+      schema:
+        type: string
+        pattern: '[a-zA-Z]{2}'
+        example: NL
+    DeliveryDestinationUNLocationCode:
+      name: deliveryDestinationUNLocationCode
+      in: query
+      description: |
+        United Nations Code for the City of Destination for Trade and Transport
+        Locations (UN/LOCODE) as defined by the UNECE\
+
+        <https://www.unece.org/cefact/locode/welcome.html>
+      required: false
+      schema:
+        type: string
+        pattern: '[a-zA-Z]{5}'
+        example: NLRTM
+    VesselOperatorCarrierCode:
+      name: vesselOperatorCarrierCode
+      in: query
+      description: |
+        National Motor Freight Traffic Association (NMFTA) - Standard Carrier
+        Alpha Codes (SCAC) 2019:\
+
+        <http://www.nmfta.org/pages/scac>
+
+        - MAEU - Maersk A/S
+
+        - SEAU - Maersk A/S* trading as Sealand Americas
+
+        - SEJJ - Sealand Europe A/S
+
+        - MCPU - Sealand Maersk Asia Pte. Ltd.
+
+        - MAEI - Maersk Line Limited
+      required: true
+      schema:
+        type: string
+        enum:
+          - MAEU
+          - SEAU
+          - SEJJ
+          - MCPU
+          - MAEI
+        example: MAEU
+    CargoType:
+      name: cargoType
+      in: query
+      description: |
+        The type of cargo to be shipped
+        DRY - Dry cargo
+        REEF - Reefer (refrigerated) cargo
+      required: false
+      schema:
+        type: string
+        enum:
+          - DRY
+          - REEF
+        default: DRY
+    ISOEquipmentCode:
+      name: ISOEquipmentCode
+      in: query
+      description: >
+        The container size and type BIC code as defined in the ISO-6346 standard
+
+        published by the International Organization for Standardization (ISO)\
+
+
+        <https://www.bic-code.org/wp-content/uploads/2018/01/SizeAndType-Table1-3.pdf>
+      required: false
+      schema:
+        type: string
+        pattern: '[a-zA-Z0-9]{4}'
+        default: 42G1
+    StuffingWeight:
+      name: stuffingWeight
+      in: query
+      description: The value for the Gross Weight of the cargo in container
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 18000
+    WeightMeasurementUnit:
+      name: weightMeasurementUnit
+      in: query
+      description: The Measurement Unit for for the Gross Weight of the cargo in container
+      required: false
+      schema:
+        type: string
+        enum:
+          - KGS
+          - LBS
+        default: KGS
+    StuffingVolume:
+      name: stuffingVolume
+      in: query
+      description: The value for the Volume of the cargo in container
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 10
+    VolumeMeasurementUnit:
+      name: volumeMeasurementUnit
+      in: query
+      description: |
+        The Measurement Unit for for the Volume of the cargo in container
+        - MTQ - Cubic Meters
+        - FTQ - Cubic Feet
+      required: false
+      schema:
+        type: string
+        enum:
+          - MTQ
+          - FTQ
+        default: MTQ
+    ExportServiceMode:
+      name: exportServiceMode
+      in: query
+      description: |
+        How cargo is received at the collectionOrigin
+
+        * CY - Container Yard is any facility operated by MAERSK or a third
+        party on MAERSK's behalf. CY exportServiceMode refers to a routing where
+        the shipper delivers the container and its cargo to a MAERSK Container
+        Yard, sometimes referred to as 'Merchant Haulage'.
+
+        * SD - Store Door is a customer's premises. SD exportServiceMode refers
+        to a routing where MAERSK collects the container and its cargo from the
+        shipper, sometimes referred to as 'Carrier Haulage'.
+
+        * CFS - Container Freight Station is a facility where LCL (Less Than
+        Container Load) shipments are consolidated and cargo is stuffed into
+        containers prior to shipment.
+      required: false
+      schema:
+        type: string
+        enum:
+          - CY
+          - SD
+          - CFS
+        default: CY
+    ImportServiceMode:
+      name: importServiceMode
+      in: query
+      description: |
+        How cargo is delivered to the deliveryDestination
+
+        * CY - Container Yard is any facility operated by MAERSK or a third
+        party on MAERSK's behalf. CY importServiceMode refers to a routing where
+        the consignee collects the cargo from a MAERSK Container Yard, sometimes
+        referred to as 'Merchant Haulage'.
+
+        * SD - Store Door is a customer's premises. SD exportServiceMode refers
+        to a routing where MAERSK delivers the container and its cargo to the
+        consignee, sometimes referred to as 'Carrier Haulage'.
+
+        * CFS - Container Freight Station is a facility where LCL (Less Than
+        Container Load) shipments are dispersed and cargo is stripped from
+        containers prior to release to the consignee.
+      required: false
+      schema:
+        type: string
+        enum:
+          - CY
+          - SD
+          - CFS
+        default: CY
+    StartDate:
+      name: startDate
+      in: query
+      description: |
+        The start date of the period for which product information is requested
+        in ISO 8601 Date format.  If not provided, the tomorrow’s date is used
+        by default.  You may see results up to 2 days prior to your date when
+        searching with 'earliest departure date'\
+
+        <https://www.iso.org/iso-8601-date-and-time-format.html>
+      required: false
+      schema:
+        type: string
+        format: date
+        nullable: true
+      examples:
+        emptyValue:
+          value: null
+        exampleValue:
+          value: '2020-06-12'
+    StartDateType:
+      name: startDateType
+      in: query
+      description: |
+        Defines the type of search required for the startDate selected
+        * D - Earliest Departure Date
+        * A - Latest Arrival Date
+      required: false
+      schema:
+        type: string
+        enum:
+          - D
+          - A
+        default: D
+    DateRange:
+      name: dateRange
+      in: query
+      description: |
+        The time period for which Product information is requested . The
+        duration is populated in ISO 8601 Duration format.  If not provided, P4W
+        is used by default.\
+
+        <https://www.iso.org/iso-8601-date-and-time-format.html>
+      required: false
+      schema:
+        type: string
+        enum:
+          - P1W
+          - P2W
+          - P3W
+          - P4W
+          - P5W
+          - P6W
+          - P7W
+          - P8W
+        default: P4W
+    VesselFlagCode:
+      name: vesselFlagCode
+      in: query
+      description: |
+        Vessel flag code that represents the 2-letter country code defined in
+        the ISO 3166-1 standard published by the International Organization for
+        Standardization (ISO) under whose laws the vessel is registered or
+        licensed
+      required: false
+      schema:
+        type: string
+        pattern: '[a-zA-Z]{2}'
+        nullable: true
+      examples:
+        emptyValue:
+          value: null
+        exampleValue:
+          value: US

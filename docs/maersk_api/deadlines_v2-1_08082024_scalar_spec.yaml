@@ -1,0 +1,270 @@
+openapi: 3.0.0
+info:
+  title: Deadlines API
+  description: >
+    Returns shipment deadlines for each terminal based on a specific Vessel IMO
+    Number/Voyage Number/Port of Load combination
+
+
+    # Overview
+
+    This service returns 6 shipment deadlines for each terminal based on a
+    specific Vessel/Voyage/Port of Load combination:
+
+    * Commercial Cargo Cutoff,
+
+    * Commercial Verified Gross Mass Deadline,
+
+    * Shipping Instructions Deadlines
+
+    * Shipping Instructions Deadline for Advance Manifest Cargo (cutoff for AMS
+    transmission countries - USA, Canada, EU, CCAM)
+
+    * Special Cargo Documentation Deadline.
+
+    * Dangerous Goods Declaration Deadline.
+
+
+    # Who can get access?
+
+    All registered users of the Maersk Developer Portal can get access to the
+    API.
+
+
+    # How many calls can I make?
+
+    Traffic and spike arrest limits are configured at the consumer key level for
+    each API Product as detailed in the table below. If these limits are
+    exceeded, the request is rejected with a 429 Too Many Requests HTTP status
+    code.
+
+
+    | Quota per Consumer Key | Traffic Surge Rate Limit per Consumer Key |
+
+    |------------------------|-------------------------------------------|
+
+    | 2000 calls per hour    | 60 calls per minute                       |
+
+
+    # Release Notes
+
+    | Version | Date | Notes |
+
+    |---------|------|-------|
+
+    | 2.1.0   | 2024-07-25 | enabled Dangerous Goods Declaration Deadline |
+
+    | 2.0.2   | 2023-05-19 | updated the response schema |
+
+    | 2.0.1   | 2022-04-08 | fixed examples and security scheme |
+
+    | 2.0.0   |      | Initial Draft | 
+  version: 2.1.0
+servers:
+  - url: https://api.maersk.com
+    description: Production Environment
+  - url: https://api-stage.maersk.com
+    description: Pre-Production Environment
+security:
+  - ApiKeyHeader: []
+tags:
+  - name: Deadlines
+    description: Deadlines operations
+paths:
+  /shipment-deadlines:
+    get:
+      tags:
+        - Deadlines
+      summary: List Deadlines
+      description: >-
+        Returns the deadlines for a specific Vessel IMO Number/Voyage
+        Number/Port of Load combination
+      parameters:
+        - name: ISOCountryCode
+          in: query
+          description: >
+            Two-letter country code defined in the ISO 3166-1 standard published
+            by the International Organization for Standardization (ISO)
+
+            https://www.iso.org/iso-3166-country-codes.html
+          required: true
+          schema:
+            type: string
+            pattern: '[a-zA-Z]{2}'
+            example: HK
+        - name: portOfLoad
+          in: query
+          description: |
+            Name of the Port of Load (name of City) as defined by the UNECE
+            https://www.unece.org/cefact/codesfortrade/codes_index.html
+          required: true
+          schema:
+            type: string
+            pattern: '[a-zA-Z -’]{3,50}'
+            example: Hong Kong
+        - name: vesselIMONumber
+          in: query
+          description: >
+            The IMO number of the vessel as defined by the Internation Maritime
+            Organization
+
+            http://www.imo.org/en/Pages/Default.aspx
+          required: true
+          schema:
+            type: string
+            pattern: '[0-9]{7}'
+            example: '9456783'
+        - name: voyage
+          in: query
+          description: The voyage number for the vessel
+          required: true
+          schema:
+            type: string
+            pattern: '[a-zA-Z0-9]{4}'
+            example: 216E
+      responses:
+        '200':
+          description: Returns a list of Deadlines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShipmentDeadlines'
+            application/stream+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShipmentDeadlines'
+            text/event-stream:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShipmentDeadlines'
+        '400':
+          description: >-
+            Bad request; the request is unacceptable often due to a missing or
+            invalid parameter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '401':
+          description: The client cannot be authenticated by the system
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '403':
+          description: The client does not have permissions to access this endpoint
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '404':
+          description: The requested resource cannot be found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+      deprecated: false
+components:
+  schemas:
+    ApiError:
+      type: object
+      required:
+        - method
+        - requestUri
+        - status
+        - timestamp
+        - message
+        - debugMessage
+      properties:
+        method:
+          type: string
+          description: The request method type e.g. GET, POST.
+        requestUri:
+          type: string
+          description: The request URI.
+        status:
+          type: string
+          description: The textual representation of the response status.
+        timestamp:
+          type: string
+          description: The date and time (dd-MM-yyyy hh:mm:ss) the error occured.
+        message:
+          type: string
+          description: High level error message.
+        debugMessage:
+          type: string
+          description: Detailed error message.
+        subErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiValidationError'
+          description: The list of invalid fields in the request.
+    ApiValidationError:
+      type: object
+      required:
+        - field
+        - rejectedValue
+        - message
+      properties:
+        field:
+          type: string
+          description: The field that has failed validation.
+        rejectedValue:
+          type: string
+          description: The value that has failed validation.
+        message:
+          type: string
+          description: The reason and advice for failed validation.
+    ShipmentDeadlines:
+      type: object
+      description: >-
+        The list of deadlines for each terminal for the specific
+        Vessel/Voyage/Port of Load combination provided by the consumer.
+      properties:
+        shipmentDeadlines:
+          $ref: '#/components/schemas/ShipmentDeadline'
+    ShipmentDeadline:
+      type: object
+      properties:
+        terminalName:
+          type: string
+          description: The name of the terminal for the Port of Load requested
+          example: BAY PORT CONTAINER TERMINAL
+        deadlines:
+          type: array
+          items:
+            $ref: '#/components/schemas/Deadline'
+    Deadline:
+      type: object
+      properties:
+        deadlineName:
+          type: string
+          description: The name of the Deadline
+          example: Commercial Cargo Cutoff
+        deadlineLocal:
+          type: string
+          format: date-time
+          description: >
+            The deadline timestamp for the local time zone that is calculated
+            based on a fixed offset to an event time which can either be the
+            (proforma or scheduled) ETA or ETD of a port call or another
+            deadline.
+          example: '2019-07-18T16:30:00'
+  securitySchemes:
+    ApiKeyHeader:
+      type: apiKey
+      name: Consumer-Key
+      in: header
+      description: >-
+        The Consumer Key issued for your registered application must be provided
+        with every request
