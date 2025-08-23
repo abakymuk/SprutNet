@@ -17,6 +17,13 @@ jobs:
     name: Quality Gate
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
+      MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
+      MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
     
     steps:
       - name: Checkout code
@@ -63,7 +70,22 @@ jobs:
         if: hashFiles('**/*.test.{js,ts,jsx,tsx}') != ''
         
       - name: Build
-        run: pnpm build
+        run: |
+          echo "🔧 Starting build process..."
+          echo "📁 Current directory: $(pwd)"
+          echo "📦 Node version: $(node --version)"
+          echo "📦 pnpm version: $(pnpm --version)"
+          echo "🔍 Environment variables check:"
+          echo "  NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:+SET}"
+          echo "  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:+SET}"
+          echo "  MAERSK_API_KEY: ${MAERSK_API_KEY:+SET}"
+          echo "  MAERSK_API_SECRET: ${MAERSK_API_SECRET:+SET}"
+          echo "  VERCEL_TOKEN: ${VERCEL_TOKEN:+SET}"
+          echo "  VERCEL_ORG_ID: ${VERCEL_ORG_ID:+SET}"
+          echo "  VERCEL_PROJECT_ID: ${VERCEL_PROJECT_ID:+SET}"
+          echo "🚀 Running build..."
+          pnpm build || (echo "❌ Build failed with exit code $?" && exit 1)
+          echo "✅ Build completed successfully!"
 
   deploy-staging:
     name: Deploy to Staging
@@ -71,6 +93,13 @@ jobs:
     needs: quality
     environment: staging
     timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
+      MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
+      MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
 
     
     steps:
@@ -92,7 +121,17 @@ jobs:
         working-directory: .
         
       - name: Build
-        run: pnpm build
+        run: |
+          echo "🔧 Starting build process for deployment..."
+          echo "📁 Current directory: $(pwd)"
+          echo "🔍 Environment variables check:"
+          echo "  NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:+SET}"
+          echo "  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:+SET}"
+          echo "  MAERSK_API_KEY: ${MAERSK_API_KEY:+SET}"
+          echo "  MAERSK_API_SECRET: ${MAERSK_API_SECRET:+SET}"
+          echo "🚀 Running build..."
+          pnpm build || (echo "❌ Build failed with exit code $?" && exit 1)
+          echo "✅ Build completed successfully!"
           
       - name: Deploy to Vercel (Staging)
         uses: amondnet/vercel-action@v25
