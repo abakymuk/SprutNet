@@ -130,6 +130,9 @@ jobs:
           MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
           MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
           
+      - name: Remove .vercel directory
+        run: rm -rf .vercel
+        
       - name: Deploy to Vercel (Staging)
         uses: amondnet/vercel-action@v25
         with:
@@ -173,6 +176,9 @@ jobs:
           MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
           MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
           
+      - name: Remove .vercel directory
+        run: rm -rf .vercel
+        
       - name: Deploy to Vercel (Production)
         uses: amondnet/vercel-action@v25
         with:
