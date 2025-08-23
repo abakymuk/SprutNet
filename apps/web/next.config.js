@@ -1,14 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@supabase/supabase-js'],
-  },
+  serverExternalPackages: ["@supabase/supabase-js"],
+  outputFileTracingRoot: __dirname,
   images: {
-    domains: ['localhost'],
+    domains: ["localhost"],
   },
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
