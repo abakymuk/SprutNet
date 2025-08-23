@@ -100,11 +100,17 @@ flyctl logs --app sprutnet
 ### Полезные команды
 
 ```bash
-# Масштабирование
-flyctl scale count 1 --app sprutnet
+# Масштабирование Production (2-4 машины)
+flyctl scale count 2 --app sprutnet
+flyctl scale count 4 --app sprutnet
+
+# Масштабирование Staging (0-1 машина)
+flyctl scale count 1 --app sprutnet-staging
+flyctl scale count 0 --app sprutnet-staging
 
 # Перезапуск
 flyctl restart --app sprutnet
+flyctl restart --app sprutnet-staging
 
 # Просмотр переменных окружения
 flyctl secrets list --app sprutnet
@@ -123,6 +129,18 @@ flyctl secrets set NEW_VAR="value" --app sprutnet
 - **Память**: 1GB
 - **CPU**: 1 shared core
 - **Порт**: 8080
+- **Масштабирование**: 2-4 машины (production)
+- **Автоостановка**: отключена для высокой доступности
+
+### fly.staging.toml
+
+Конфигурация для staging окружения:
+
+- **Регион**: Frankfurt (fra)
+- **Память**: 1GB
+- **CPU**: 1 shared core
+- **Порт**: 8080
+- **Масштабирование**: 0-1 машина (экономия)
 - **Автоостановка**: включена для экономии
 
 ### Dockerfile

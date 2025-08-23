@@ -138,7 +138,7 @@ jobs:
       - name: Deploy to Fly.io
         run: |
           flyctl apps list
-          flyctl deploy --app sprutnet-staging --remote-only
+          flyctl deploy --app sprutnet-staging --config fly.staging.toml --remote-only
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
