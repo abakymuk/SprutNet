@@ -113,8 +113,8 @@ git push origin v1.0.0
 - **Releases**: https://github.com/abakymuk/SprutNet/actions?query=workflow%3A%22Release+on+Main%22
 
 ### Environments
-- **Staging**: https://sprutnet-staging.fly.dev
-- **Production**: https://sprutnet.fly.dev
+- **Staging**: https://sprutnet-staging.vercel.app
+- **Production**: https://sprutnet.vercel.app
 
 ---
 
