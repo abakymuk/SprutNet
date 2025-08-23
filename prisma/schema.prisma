@@ -1,0 +1,203 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// REFERENCE TABLES
+// ========================================
+
+model Country {
+  countryCode String   @id @map("country_code") @db.VarChar(2)
+  countryName String   @map("country_name") @db.VarChar(100)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  locations Location[]
+  deadlines Deadline[]
+
+  @@map("countries")
+}
+
+model CarrierCode {
+  carrierCode String   @id @map("carrier_code") @db.VarChar(4)
+  carrierName String   @map("carrier_name") @db.VarChar(100)
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  pointToPointSchedules PointToPointSchedule[]
+
+  @@map("carrier_codes")
+}
+
+model TransportMode {
+  modeCode    String   @id @map("mode_code") @db.VarChar(3)
+  modeName    String   @map("mode_name") @db.VarChar(50)
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  transportLegs TransportLeg[]
+
+  @@map("transport_modes")
+}
+
+model LocationType {
+  typeCode    String   @id @map("type_code") @db.VarChar(20)
+  typeName    String   @map("type_name") @db.VarChar(50)
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  locations Location[]
+
+  @@map("location_types")
+}
+
+// ========================================
+// MAIN TABLES
+// ========================================
+
+model Vessel {
+  vesselImoNumber      String   @id @map("vessel_imo_number") @db.VarChar(7)
+  carrierVesselCode    String?  @map("carrier_vessel_code") @db.VarChar(3)
+  vesselShortName      String?  @map("vessel_short_name") @db.VarChar(18)
+  vesselLongName       String?  @map("vessel_long_name") @db.VarChar(35)
+  vesselFlagCode       String?  @map("vessel_flag_code") @db.VarChar(2)
+  vesselBuiltYear      Int?
+  vesselCallSign       String?  @map("vessel_call_sign") @db.VarChar(10)
+  vesselCapacityTeu    Int?     @map("vessel_capacity_teu")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  transportLegs TransportLeg[]
+  deadlines     Deadline[]
+
+  @@map("vessels")
+}
+
+model Location {
+  carrierGeoId         String   @id @map("carrier_geo_id") @db.VarChar(13)
+  countryCode          String?  @map("country_code") @db.VarChar(2)
+  cityName             String?  @map("city_name") @db.VarChar(100)
+  unLocationCode       String?  @map("un_location_code") @db.VarChar(5)
+  unRegionCode         String?  @map("un_region_code") @db.VarChar(3)
+  unRegionName         String?  @map("un_region_name") @db.VarChar(100)
+  locationType         String?  @map("location_type") @db.VarChar(20)
+  locationName         String?  @map("location_name") @db.VarChar(100)
+  timeZoneId           String?  @map("time_zone_id") @db.VarChar(50)
+  carrierCountryGeoId  String?  @map("carrier_country_geo_id") @db.VarChar(13)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  country              Country?     @relation(fields: [countryCode], references: [countryCode])
+  locationTypeRef      LocationType? @relation(fields: [locationType], references: [typeCode])
+  facilities           Facility[]
+  collectionOriginSchedules PointToPointSchedule[] @relation("CollectionOrigin")
+  deliveryDestinationSchedules PointToPointSchedule[] @relation("DeliveryDestination")
+  startLocationLegs    TransportLeg[] @relation("StartLocation")
+  endLocationLegs      TransportLeg[] @relation("EndLocation")
+
+  @@map("locations")
+}
+
+model Facility {
+  id                   String   @id @default(uuid()) @db.Uuid
+  locationGeoId        String?  @map("location_geo_id") @db.VarChar(13)
+  facilityType         String?  @map("facility_type") @db.VarChar(20)
+  facilityName         String?  @map("facility_name") @db.VarChar(100)
+  carrierSiteGeoId     String?  @map("carrier_site_geo_id") @db.VarChar(13)
+  siteUnLocationCode   String?  @map("site_un_location_code") @db.VarChar(5)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  location             Location? @relation(fields: [locationGeoId], references: [carrierGeoId])
+
+  @@map("facilities")
+}
+
+model PointToPointSchedule {
+  id                           String   @id @default(uuid()) @db.Uuid
+  carrierProductId             String?  @map("carrier_product_id") @db.VarChar(50)
+  carrierProductSequenceId     String?  @map("carrier_product_sequence_id") @db.VarChar(50)
+  vesselOperatorCarrierCode    String?  @map("vessel_operator_carrier_code") @db.VarChar(4)
+  collectionOriginGeoId        String?  @map("collection_origin_geo_id") @db.VarChar(13)
+  deliveryDestinationGeoId     String?  @map("delivery_destination_geo_id") @db.VarChar(13)
+  productValidFromDate         DateTime? @map("product_valid_from_date") @db.Date
+  productValidToDate           DateTime? @map("product_valid_to_date") @db.Date
+  numberOfProductLinks         Int?     @map("number_of_product_links")
+  createdAt                   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  carrierCode                  CarrierCode? @relation(fields: [vesselOperatorCarrierCode], references: [carrierCode])
+  collectionOrigin            Location? @relation("CollectionOrigin", fields: [collectionOriginGeoId], references: [carrierGeoId])
+  deliveryDestination         Location? @relation("DeliveryDestination", fields: [deliveryDestinationGeoId], references: [carrierGeoId])
+  transportLegs               TransportLeg[]
+
+  @@map("point_to_point_schedules")
+}
+
+model TransportLeg {
+  id                           String   @id @default(uuid()) @db.Uuid
+  scheduleId                   String   @map("schedule_id") @db.Uuid
+  departureDateTime            DateTime? @map("departure_date_time") @db.Timestamptz(6)
+  arrivalDateTime              DateTime? @map("arrival_date_time") @db.Timestamptz(6)
+  vesselImoNumber              String?  @map("vessel_imo_number") @db.VarChar(7)
+  transportMode                String?  @map("transport_mode") @db.VarChar(3)
+  carrierTradeLaneName         String?  @map("carrier_trade_lane_name") @db.VarChar(100)
+  carrierDepartureVoyageNumber String?  @map("carrier_departure_voyage_number") @db.VarChar(4)
+  inducementLinkFlag           String?  @map("inducement_link_flag") @db.VarChar(1)
+  carrierServiceCode           String?  @map("carrier_service_code") @db.VarChar(3)
+  carrierServiceName           String?  @map("carrier_service_name") @db.VarChar(100)
+  linkDirection                String?  @map("link_direction") @db.VarChar(10)
+  carrierCode                  String?  @map("carrier_code") @db.VarChar(3)
+  routingType                  String?  @map("routing_type") @db.VarChar(1)
+  startLocationGeoId           String?  @map("start_location_geo_id") @db.VarChar(13)
+  endLocationGeoId             String?  @map("end_location_geo_id") @db.VarChar(13)
+  createdAt                   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  schedule                     PointToPointSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  vessel                       Vessel? @relation(fields: [vesselImoNumber], references: [vesselImoNumber])
+  transportModeRef             TransportMode? @relation(fields: [transportMode], references: [modeCode])
+  startLocation                Location? @relation("StartLocation", fields: [startLocationGeoId], references: [carrierGeoId])
+  endLocation                  Location? @relation("EndLocation", fields: [endLocationGeoId], references: [carrierGeoId])
+
+  @@map("transport_legs")
+}
+
+model Deadline {
+  id               String   @id @default(uuid()) @db.Uuid
+  vesselImoNumber  String?  @map("vessel_imo_number") @db.VarChar(7)
+  voyage           String?  @db.VarChar(4)
+  portOfLoad       String?  @map("port_of_load") @db.VarChar(100)
+  isoCountryCode   String?  @map("iso_country_code") @db.VarChar(2)
+  terminalName     String?  @map("terminal_name") @db.VarChar(100)
+  deadlineName     String?  @map("deadline_name") @db.VarChar(100)
+  deadlineLocal    DateTime? @map("deadline_local") @db.Timestamptz(6)
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  // Relations
+  vessel           Vessel? @relation(fields: [vesselImoNumber], references: [vesselImoNumber])
+  country          Country? @relation(fields: [isoCountryCode], references: [countryCode])
+
+  @@map("deadlines")
+}
