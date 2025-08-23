@@ -130,18 +130,15 @@ jobs:
           MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
           MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
           
-      - name: Clean Vercel cache
-        run: |
-          rm -rf .vercel
-          rm -rf node_modules/.cache
-          
-      - name: Deploy to Vercel (Staging)
-        uses: amondnet/vercel-action@v25
+      - name: Deploy to Fly.io (Staging)
+        uses: superfly/flyctl-actions/setup-flyctl@master
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod=false --force'
+          version: "latest"
+          
+      - name: Deploy to Fly.io
+        run: flyctl deploy --app sprutnet-staging
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
 
   # Деплой на production (main branch)
   deploy-production:
@@ -178,15 +175,12 @@ jobs:
           MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
           MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
           
-      - name: Clean Vercel cache
-        run: |
-          rm -rf .vercel
-          rm -rf node_modules/.cache
-          
-      - name: Deploy to Vercel (Production)
-        uses: amondnet/vercel-action@v25
+      - name: Deploy to Fly.io (Production)
+        uses: superfly/flyctl-actions/setup-flyctl@master
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod=true --force'
+          version: "latest"
+          
+      - name: Deploy to Fly.io
+        run: flyctl deploy --app sprutnet
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

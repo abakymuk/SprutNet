@@ -111,8 +111,8 @@ pnpm lint
 
 #### 🌐 Деплой
 
-- **Staging**: https://sprutnet-staging.vercel.app (develop branch)
-- **Production**: https://sprutnet.vercel.app (main branch)
+- **Staging**: https://sprutnet-staging.fly.dev (develop branch)
+- **Production**: https://sprutnet.fly.dev (main branch)
 
 Подробная инструкция: [CI/CD Setup Guide](.github/CICD_SETUP.md)
 

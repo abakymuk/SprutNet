@@ -2,6 +2,7 @@
 const nextConfig = {
   serverExternalPackages: ["@supabase/supabase-js"],
   outputFileTracingRoot: __dirname,
+  output: "standalone",
   images: {
     domains: ["localhost"],
   },

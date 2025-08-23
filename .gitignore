@@ -105,6 +105,9 @@ Thumbs.db
 # Vercel
 .vercel
 
+# Fly.io
+.fly/
+
 # Supabase
 .supabase/
 
