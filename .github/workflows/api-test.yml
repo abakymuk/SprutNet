@@ -241,7 +241,7 @@ jobs:
           echo "All 4 main APIs are functioning correctly." >> api-status.md
           
       - name: Upload API Status Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: api-status-report
           path: api-status.md
