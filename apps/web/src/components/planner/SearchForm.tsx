@@ -171,17 +171,30 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
   ) => {
     try {
       const params = new URLSearchParams({
-        query: query.trim(),
+        q: query.trim(),
         limit: "10",
       });
 
+      console.log("🔍 Searching ports with query:", query);
       const response = await fetch(`/api/ports/search?${params}`);
+      console.log("📡 Response status:", response.status);
+
       if (!response.ok) {
-        throw new Error("Failed to fetch ports");
+        const errorText = await response.text();
+        console.error("❌ API Error:", errorText);
+        throw new Error(
+          `Failed to fetch ports: ${response.status} ${response.statusText}`
+        );
       }
 
       const data = await response.json();
-      setPorts(data.ports || []);
+      console.log("📦 API Response:", data);
+
+      if (data.success && Array.isArray(data.data)) {
+        setPorts(data.data);
+      } else {
+        setPorts([]);
+      }
     } catch (error) {
       console.error("Error searching ports:", error);
       setPorts([]);
@@ -267,7 +280,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                     >
                       {isClient && originPort ? (
                         <span className="truncate">
-                          {originPort.name} ({originPort.cityName},{" "}
+                          {originPort.name} ({originPort.id},{" "}
                           {originPort.countryName})
                         </span>
                       ) : (
@@ -288,9 +301,9 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                       <CommandList>
                         <CommandEmpty>Порты не найдены.</CommandEmpty>
                         <CommandGroup>
-                          {originPorts.map((port) => (
+                          {originPorts.map((port, index) => (
                             <CommandItem
-                              key={port.id}
+                              key={`${port.id}-${index}`}
                               value={port.id}
                               onSelect={() => {
                                 setOriginPort(port);
@@ -301,7 +314,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                               <div className="flex flex-col">
                                 <span className="font-medium">{port.name}</span>
                                 <span className="text-sm text-muted-foreground">
-                                  {port.cityName}, {port.countryName}
+                                  {port.cityName || port.id}, {port.countryName}
                                 </span>
                               </div>
                             </CommandItem>
@@ -340,7 +353,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                     >
                       {isClient && destinationPort ? (
                         <span className="truncate">
-                          {destinationPort.name} ({destinationPort.cityName},{" "}
+                          {destinationPort.name} ({destinationPort.id},{" "}
                           {destinationPort.countryName})
                         </span>
                       ) : (
@@ -361,9 +374,9 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                       <CommandList>
                         <CommandEmpty>Порты не найдены.</CommandEmpty>
                         <CommandGroup>
-                          {destinationPorts.map((port) => (
+                          {destinationPorts.map((port, index) => (
                             <CommandItem
-                              key={port.id}
+                              key={`${port.id}-${index}`}
                               value={port.id}
                               onSelect={() => {
                                 setDestinationPort(port);
@@ -374,7 +387,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                               <div className="flex flex-col">
                                 <span className="font-medium">{port.name}</span>
                                 <span className="text-sm text-muted-foreground">
-                                  {port.cityName}, {port.countryName}
+                                  {port.cityName || port.id}, {port.countryName}
                                 </span>
                               </div>
                             </CommandItem>

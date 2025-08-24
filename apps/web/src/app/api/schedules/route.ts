@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
     }
     
     // Проверяем флаг для использования моков
-    const useMocks = process.env.FEATURE_MAERSK !== 'true';
+    // Временно используем мок-данные, пока Maersk API не полностью интегрирован
+    const useMocks = true; // process.env.FEATURE_MAERSK !== 'true';
     
     if (useMocks) {
       // Используем моковые данные
@@ -98,8 +99,8 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Проверяем флаг для использования моков
-    const useMocks = process.env.FEATURE_MAERSK !== 'true';
+    // Временно используем мок-данные, пока Maersk API не полностью интегрирован
+    const useMocks = true; // process.env.FEATURE_MAERSK !== 'true';
     
     if (useMocks) {
       // Используем моковые данные
