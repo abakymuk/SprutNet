@@ -28,6 +28,12 @@ jobs:
           echo "Testing /api/ocean-products..."
           curl -f https://sprutnet.vercel.app/api/ocean-products || echo "❌ Ocean Products API failed"
           
+          echo "Testing /api/schedules..."
+          curl -f https://sprutnet.vercel.app/api/schedules || echo "❌ Schedules API failed"
+          
+          echo "Testing /api/ports/search..."
+          curl -f "https://sprutnet.vercel.app/api/ports/search?q=test" || echo "❌ Ports Search API failed"
+          
           echo "✅ Health check completed"
           
   performance-check:
