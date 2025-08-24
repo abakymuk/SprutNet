@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -130,7 +130,7 @@ export function DeadlinesModal({ sailing, children }: DeadlinesModalProps) {
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const fetchDeadlines = async () => {
+  const fetchDeadlines = useCallback(async () => {
     console.log("🔍 fetchDeadlines called with sailing:", sailing);
 
     if (!sailing.id) {
@@ -168,7 +168,7 @@ export function DeadlinesModal({ sailing, children }: DeadlinesModalProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [sailing]);
 
   useEffect(() => {
     console.log("🔍 DeadlinesModal useEffect triggered:", {

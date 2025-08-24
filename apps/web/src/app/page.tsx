@@ -23,6 +23,8 @@ import {
   Users,
   Zap,
   Shield,
+  Play,
+  TestTube,
 } from "lucide-react";
 
 export default function HomePage() {
@@ -80,7 +82,10 @@ export default function HomePage() {
                 </Link>
               </Button>
               <Button variant="outline" size="lg" asChild>
-                <Link href="/data">Посмотреть данные</Link>
+                <Link href="/demo">Демо</Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild>
+                <Link href="/e2e-test">E2E Тесты</Link>
               </Button>
             </div>
           </div>

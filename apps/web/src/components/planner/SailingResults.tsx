@@ -78,6 +78,8 @@ import { ru } from "date-fns/locale";
 import { differenceInDays } from "date-fns";
 import type { Sailing } from "@sprutnet/shared/types";
 import { DeadlinesModal } from "./deadlines-modal";
+import { ResultsSkeleton } from "./results-skeleton";
+import { ErrorState, EmptyState } from "./error-states";
 
 interface SailingResultsProps {
   sailings: Sailing[];
@@ -297,44 +299,38 @@ export function SailingResults({
   ];
 
   if (isLoading) {
-    return <SailingSkeleton />;
+    return <ResultsSkeleton />;
   }
 
   if (!hasSearched) {
     return (
-      <div className="text-center py-12">
-        <div className="p-4 bg-muted rounded-full w-fit mx-auto mb-4">
-          <Ship className="h-8 w-8 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-medium text-foreground mb-2">
-          Начните поиск рейсов
-        </h3>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          Выберите порты отправления и назначения, чтобы найти доступные рейсы
-        </p>
-      </div>
+      <EmptyState
+        title="Начните поиск рейсов"
+        message="Выберите порты отправления и назначения, чтобы найти доступные рейсы"
+        action={
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Ship className="h-6 w-6" />
+            <span>Используйте форму поиска выше</span>
+          </div>
+        }
+      />
     );
   }
 
   if (filteredSailings.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="p-4 bg-destructive/10 rounded-full w-fit mx-auto mb-4">
-          <AlertCircle className="h-8 w-8 text-destructive" />
-        </div>
-        <h3 className="text-lg font-medium text-foreground mb-2">
-          Рейсы не найдены
-        </h3>
-        <p className="text-muted-foreground max-w-md mx-auto">
-          Попробуйте изменить параметры поиска или даты отправления
-        </p>
-        <Alert className="mt-4 max-w-md mx-auto">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Возможно, стоит расширить диапазон дат или изменить фильтры
-          </AlertDescription>
-        </Alert>
-      </div>
+      <EmptyState
+        title="Рейсы не найдены"
+        message="Попробуйте изменить параметры поиска или даты отправления"
+        action={
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <AlertCircle className="h-6 w-6" />
+            <span>
+              Возможно, стоит расширить диапазон дат или изменить фильтры
+            </span>
+          </div>
+        }
+      />
     );
   }
 

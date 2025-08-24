@@ -78,6 +78,7 @@ import { ru } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { PortRef } from "@sprutnet/shared/types";
 import { useSearchContext } from "@/contexts/search-context";
+import { SearchSkeleton } from "./search-skeleton";
 
 interface SearchFormProps {
   onSearch: (
@@ -113,10 +114,6 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
   // Показываем плейсхолдеры до инициализации контекста
   const [isClient, setIsClient] = useState(false);
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   const [searchOptions, setSearchOptions] = useState<SearchOptions>({
     includeTransshipment: true,
     directRoutesOnly: false,
@@ -132,6 +129,10 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
   const [isOriginOpen, setIsOriginOpen] = useState(false);
   const [isDestinationOpen, setIsDestinationOpen] = useState(false);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Debounced port search for origin
   useEffect(() => {
@@ -158,6 +159,11 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
 
     return () => clearTimeout(timeoutId);
   }, [destinationSearchQuery]);
+
+  // Показываем skeleton loader во время загрузки
+  if (isLoading) {
+    return <SearchSkeleton />;
+  }
 
   const searchPorts = async (
     query: string,
