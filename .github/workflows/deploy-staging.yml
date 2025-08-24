@@ -94,14 +94,26 @@ jobs:
           pnpm build || (echo "❌ Build failed with exit code $?" && exit 1)
           echo "✅ Build completed successfully!"
           
+      - name: Vercel Pull (project settings & env)
+        run: |
+          echo "📥 Pulling Vercel project settings..."
+          npx vercel pull --yes --environment=preview --token ${{ secrets.VERCEL_TOKEN }}
+          
+      - name: Vercel Build
+        run: |
+          echo "🔨 Building with Vercel..."
+          npx vercel build --token ${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          
       - name: Deploy to Vercel (Staging)
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod=false'
-          working-directory: ./
+        run: |
+          echo "🚀 Deploying to Vercel (preview)..."
+          npx vercel deploy --prebuilt --token ${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           
       - name: Notify staging deployment
         run: |
