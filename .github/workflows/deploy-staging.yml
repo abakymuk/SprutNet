@@ -43,6 +43,19 @@ jobs:
           echo "🚀 Running pnpm install..."
           pnpm install
         
+      - name: Debug Environment
+        run: |
+          echo "🔍 Debugging environment..."
+          echo "📁 Current directory: $(pwd)"
+          echo "📄 Directory contents:"
+          ls -la
+          echo "📄 apps/web contents:"
+          ls -la apps/web/
+          echo "📄 prisma contents:"
+          ls -la prisma/
+          echo "🔍 Environment variables:"
+          env | grep -E "(NEXT_PUBLIC_|MAERSK_|DATABASE_|VERCEL_)" || echo "No matching env vars found"
+          
       - name: Build
         run: |
           echo "🔧 Starting build process for staging deployment..."
