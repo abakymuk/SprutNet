@@ -13,7 +13,7 @@ env:
   MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
   MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
   MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
-  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  DATABASE_URL: postgresql://postgres:Gariba1ddi@db.kzbtwgpedbojxnfiprsw.supabase.co:5432/postgres
 
 jobs:
   setup:
