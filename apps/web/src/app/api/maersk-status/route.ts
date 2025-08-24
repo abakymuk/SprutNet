@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
-import { 
-  checkEnvironmentVariables, 
-  checkAllProducts, 
+import {
+  checkEnvironmentVariables,
+  checkProductAccess,
+  checkAllProducts,
+  getAvailableProducts,
   checkFeatureFlags,
-  getAvailableProducts 
+  MAERSK_PRODUCTS,
 } from '@/lib/maersk-api-checker';
 
 export async function GET() {
-  try {
-    console.log('🔍 Maersk API Status Check initiated');
+  console.log('🔍 Maersk API Status Check initiated');
 
+  try {
     // Проверяем переменные окружения
     const envCheck = checkEnvironmentVariables();
     console.log('📋 Environment check result:', envCheck);
@@ -18,70 +20,59 @@ export async function GET() {
     const featureFlags = checkFeatureFlags();
     console.log('🚩 Feature flags:', featureFlags);
 
-    // Получаем список продуктов
-    const products = getAvailableProducts();
-
-    // Если переменные окружения не настроены, возвращаем только базовую информацию
-    if (!envCheck.success) {
-      return NextResponse.json({
-        success: false,
-        message: 'Maersk API не настроен',
-        environment: envCheck,
-        featureFlags,
-        products: products.map(p => ({ ...p, status: 'not_configured' })),
-        recommendations: [
-          'Установите MAERSK_API_KEY в переменных окружения',
-          'Установите MAERSK_BASE_URL (опционально)',
-          'Установите FEATURE_MAERSK=true для активации API'
-        ]
-      });
-    }
-
-    // Если API отключен через feature flag, возвращаем соответствующую информацию
-    if (!featureFlags.MAERSK_API) {
-      return NextResponse.json({
-        success: false,
-        message: 'Maersk API отключен через feature flag',
-        environment: envCheck,
-        featureFlags,
-        products: products.map(p => ({ ...p, status: 'disabled' })),
-        recommendations: [
-          'Установите FEATURE_MAERSK=true для активации API'
-        ]
-      });
-    }
-
     // Проверяем доступность продуктов
     const productsCheck = await checkAllProducts();
     console.log('📦 Products check result:', productsCheck);
 
-    return NextResponse.json({
-      success: productsCheck.success,
-      message: productsCheck.message,
+    // Формируем общий статус
+    const isSuccess = envCheck.success && productsCheck.success;
+    const availableProducts = getAvailableProducts();
+    const message = isSuccess
+      ? `Доступно ${availableProducts.length} из ${MAERSK_PRODUCTS.length} продуктов`
+      : 'Критические ошибки в настройке API';
+
+    const recommendations: string[] = [];
+
+    // Добавляем рекомендации
+    if (!envCheck.success) {
+      recommendations.push(
+        'Проверьте настройку переменных окружения MAERSK_API_KEY и MAERSK_API_SECRET'
+      );
+    }
+
+    if (!productsCheck.success) {
+      recommendations.push(
+        'Убедитесь, что все необходимые продукты активированы в Maersk Developer Portal'
+      );
+    }
+
+    if (availableProducts.length === 0) {
+      recommendations.push(
+        'Проверьте правильность API ключей и активацию продуктов'
+      );
+    }
+
+    const response = {
+      success: isSuccess,
+      message,
       environment: envCheck,
       featureFlags,
-      products: products.map(p => ({
-        ...p,
-        status: productsCheck.details?.products?.includes(p.name) ? 'active' : 'inactive'
-      })),
+      products: MAERSK_PRODUCTS,
       details: productsCheck.details,
-      recommendations: productsCheck.success ? [] : [
-        'Проверьте правильность MAERSK_API_KEY',
-        'Убедитесь, что у вас есть доступ к запрашиваемым продуктам',
-        'Проверьте сетевое подключение к api.maersk.com'
-      ]
-    });
+      recommendations,
+    };
 
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('❌ Error checking Maersk API status:', error);
+    console.error('❌ Error in Maersk API Status Check:', error);
     
-    return NextResponse.json({
-      success: false,
-      message: 'Ошибка при проверке статуса Maersk API',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      environment: checkEnvironmentVariables(),
-      featureFlags: checkFeatureFlags(),
-      products: getAvailableProducts().map(p => ({ ...p, status: 'error' }))
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Ошибка при проверке статуса API',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }

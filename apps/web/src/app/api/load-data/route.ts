@@ -1,55 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { Maersk } from '@/lib/maersk';
 
 const prisma = new PrismaClient();
 
-// Функция для выполнения HTTP запросов к Maersk API
+// Функция для выполнения HTTP запросов к Maersk API (использует новый HTTP-клиент)
 async function makeRequest(hostname: string, path: string, headers: Record<string, string> = {}) {
-  const https = require('https');
-  
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname,
-      port: 443,
-      path,
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Consumer-Key': process.env.MAERSK_API_KEY || 'IR6PjVz4jkGu8RaazMat1Tz0l9NevMWd',
-        'User-Agent': 'SprutNet/1.0',
-        ...headers
-      }
-    };
-
-    const req = https.request(options, (res: any) => {
-      let data = '';
-      
-      res.on('data', (chunk: any) => {
-        data += chunk;
-      });
-      
-      res.on('end', () => {
-        try {
-          const jsonData = JSON.parse(data);
-          resolve({ status: res.statusCode, data: jsonData });
-        } catch (error) {
-          resolve({ status: res.statusCode, data: data });
-        }
-      });
-    });
-
-    req.on('error', (error: any) => {
-      reject(error);
-    });
-
-    req.setTimeout(30000, () => {
-      req.destroy();
-      reject(new Error('Request timeout'));
-    });
-
-    req.end();
-  });
+  try {
+    const response = await Maersk.fetch(path);
+    return { status: response.status, data: response.data };
+  } catch (error: any) {
+    return { status: error.status || 500, data: error };
+  }
 }
 
 // Функция для загрузки данных о судах

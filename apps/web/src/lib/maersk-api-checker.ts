@@ -1,4 +1,5 @@
 import { MAERSK_API_CONFIG, getMaerskHeaders } from './maersk-api';
+import { Maersk } from './maersk';
 
 export interface MaerskAPICheckResult {
   success: boolean;
@@ -91,49 +92,42 @@ export async function checkProductAccess(product: MaerskProduct): Promise<Maersk
     // Специальные параметры для каждого продукта
     switch (product.name) {
       case 'Locations':
-        url = `${MAERSK_API_CONFIG.baseUrl}${product.endpoint}`;
+        url = `${product.endpoint}`;
         break;
       case 'Point-to-Point Schedules':
         // Для P2P нужны все обязательные параметры включая vesselOperatorCarrierCode
-        url = `${MAERSK_API_CONFIG.baseUrl}${product.endpoint}?collectionOriginCountryCode=US&collectionOriginCityName=New%20York&deliveryDestinationCountryCode=DE&deliveryDestinationCityName=Hamburg&vesselOperatorCarrierCode=MAEU&limit=1`;
+        url = `${product.endpoint}?collectionOriginCountryCode=US&collectionOriginCityName=New%20York&deliveryDestinationCountryCode=DE&deliveryDestinationCityName=Hamburg&vesselOperatorCarrierCode=MAEU&limit=1`;
         break;
       case 'Deadlines':
         // Для Deadlines нужны vesselIMONumber и voyage
-        url = `${MAERSK_API_CONFIG.baseUrl}${product.endpoint}?ISOCountryCode=US&portOfLoad=New%20York&vesselIMONumber=9456783&voyage=216E&limit=1`;
+        url = `${product.endpoint}?ISOCountryCode=US&portOfLoad=New%20York&vesselIMONumber=9456783&voyage=216E&limit=1`;
         break;
       case 'Vessels':
-        url = `${MAERSK_API_CONFIG.baseUrl}${product.endpoint}?limit=1`;
+        url = `${product.endpoint}?limit=1`;
         break;
       default:
-        url = `${MAERSK_API_CONFIG.baseUrl}${product.endpoint}?limit=1`;
+        url = `${product.endpoint}?limit=1`;
     }
     
     console.log(`🔍 Проверяем продукт ${product.name}: ${url}`);
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        ...getMaerskHeaders(),
-        'Content-Type': 'application/json',
-      },
-    });
-
-    console.log(`📡 Ответ для ${product.name}: ${response.status} ${response.statusText}`);
-
-    if (response.ok) {
-      const data = await response.json();
-      console.log(`✅ ${product.name} активен, получено ${Array.isArray(data) ? data.length : 'данные'}`);
+    try {
+      const response = await Maersk.fetch(url);
+      
+      console.log(`✅ ${product.name} активен, получено ${Array.isArray(response.data) ? response.data.length : 'данные'}`);
       return { ...product, status: 'active' };
-    } else if (response.status === 404) {
-      // 404 означает, что API доступен, но данных для этих параметров нет
-      console.log(`✅ ${product.name} доступен, но данных нет (404)`);
-      return { ...product, status: 'active' };
-    } else if (response.status === 401) {
-      console.log(`❌ ${product.name}: ошибка аутентификации`);
-      return { ...product, status: 'error' };
-    } else {
-      console.log(`⚠️ ${product.name}: недоступен (${response.status})`);
-      return { ...product, status: 'inactive' };
+    } catch (error: any) {
+      if (error.status === 404) {
+        // 404 означает, что API доступен, но данных для этих параметров нет
+        console.log(`✅ ${product.name} доступен, но данных нет (404)`);
+        return { ...product, status: 'active' };
+      } else if (error.status === 401) {
+        console.log(`❌ ${product.name}: ошибка аутентификации`);
+        return { ...product, status: 'error' };
+      } else {
+        console.log(`⚠️ ${product.name}: недоступен (${error.status})`);
+        return { ...product, status: 'inactive' };
+      }
     }
   } catch (error) {
     console.error(`❌ Ошибка при проверке продукта ${product.name}:`, error);
