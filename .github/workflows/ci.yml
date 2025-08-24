@@ -74,6 +74,16 @@ jobs:
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install..."
           pnpm install
+          
+      - name: Generate Prisma Client
+        run: |
+          echo "🔧 Generating Prisma Client..."
+          pnpm exec prisma generate --schema=prisma/schema.prisma
+          echo "🔧 Generating Prisma Client for apps/web..."
+          cd apps/web
+          pnpm exec prisma generate --schema=../../prisma/schema.prisma
+          cd ../..
+          echo "✅ Prisma Client generated successfully!"
         
       - name: Lint
         run: pnpm lint

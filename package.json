@@ -5,14 +5,14 @@
   "description": "MVP Shipping Planner - планировщик морских перевозок",
   "scripts": {
     "dev": "pnpm --filter web dev",
-    "build": "pnpm --filter web build",
+    "build": "pnpm prisma:generate && pnpm --filter web build",
     "start": "pnpm --filter web start",
     "lint": "pnpm --filter web lint",
-    "type-check": "pnpm --filter web type-check",
+    "type-check": "pnpm prisma:generate && pnpm --filter web type-check",
     "test": "pnpm --filter web test",
     "test:e2e": "pnpm --filter web test:e2e",
     "clean": "pnpm -r exec rm -rf node_modules && rm -rf node_modules",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "prisma generate && cd apps/web && pnpm exec prisma generate --schema=../../prisma/schema.prisma && cd ../..",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio"
   },
