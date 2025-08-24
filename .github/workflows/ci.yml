@@ -176,6 +176,8 @@ jobs:
           echo "📁 Current directory: $(pwd)"
           echo "📄 Checking for schema.prisma:"
           ls -la prisma/schema.prisma || echo "❌ schema.prisma not found in root"
+          echo "📦 Prisma version:"
+          npx prisma --version || echo "❌ Prisma not found, installing..."
           npx prisma validate --schema=prisma/schema.prisma
           echo "✅ Prisma schema is valid"
           
@@ -184,5 +186,7 @@ jobs:
         run: |
           echo "🔧 Generating Prisma client..."
           echo "📁 Current directory: $(pwd)"
+          echo "📦 Prisma version:"
+          npx prisma --version || echo "❌ Prisma not found, installing..."
           npx prisma generate --schema=prisma/schema.prisma
           echo "✅ Prisma client generated successfully"
