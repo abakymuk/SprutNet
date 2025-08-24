@@ -15,14 +15,14 @@ async function sendPushNotification(userId: string, title: string, message: stri
 }
 
 // Функция для проверки, нужно ли отправить уведомление
-function shouldSendNotification(deadlineDate: string, reminderTime: string): boolean {
+function shouldSendNotification(deadlineDate: string, reminderTimeStr: string): boolean {
   const now = new Date();
   const deadline = new Date(deadlineDate);
-  const reminderHours = parseInt(reminderTime.replace('h', ''));
-  const reminderTime = new Date(deadline.getTime() - reminderHours * 60 * 60 * 1000);
+  const reminderHours = parseInt(reminderTimeStr.replace('h', ''));
+  const reminderDateTime = new Date(deadline.getTime() - reminderHours * 60 * 60 * 1000);
   
   // Проверяем, что текущее время близко к времени напоминания (в пределах 5 минут)
-  const diffMinutes = Math.abs((now.getTime() - reminderTime.getTime()) / (1000 * 60));
+  const diffMinutes = Math.abs((now.getTime() - reminderDateTime.getTime()) / (1000 * 60));
   return diffMinutes <= 5;
 }
 
@@ -54,10 +54,10 @@ export async function POST(request: Request) {
         const sentNotifications = [];
 
         // Проверяем каждый тип напоминания
-        for (const [reminderTime, enabled] of Object.entries(reminders)) {
-          if (enabled && shouldSendNotification(deadline.deadlineLocal, reminderTime)) {
+        for (const [reminderTimeKey, enabled] of Object.entries(reminders)) {
+          if (enabled && shouldSendNotification(deadline.deadlineLocal, reminderTimeKey)) {
             const subject = `Напоминание: ${deadline.name}`;
-            const message = `Дедлайн "${deadline.name}" наступит через ${reminderTime}. ${deadline.description}`;
+            const message = `Дедлайн "${deadline.name}" наступит через ${reminderTimeKey}. ${deadline.description}`;
 
             // Отправляем email уведомления
             if (email) {
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
                 sentNotifications.push({
                   type: 'email',
                   success: false,
-                  error: error.message
+                  error: error instanceof Error ? error.message : 'Unknown error'
                 });
               }
             }
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
                 sentNotifications.push({
                   type: 'push',
                   success: false,
-                  error: error.message
+                  error: error instanceof Error ? error.message : 'Unknown error'
                 });
               }
             }
