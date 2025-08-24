@@ -64,7 +64,7 @@ jobs:
           pnpm exec prisma generate --schema=prisma/schema.prisma
           echo "🔧 Generating Prisma client in apps/web..."
           cd apps/web
-          pnpm exec prisma generate --schema=prisma/schema.prisma
+          pnpm exec prisma generate --schema=../../prisma/schema.prisma
           cd ../..
           echo "🚀 Running build..."
           pnpm --filter web build || (echo "❌ Build failed with exit code $?" && exit 1)
