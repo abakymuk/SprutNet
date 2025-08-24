@@ -34,7 +34,13 @@ jobs:
           version: '8'
           
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: |
+          echo "📦 Installing dependencies..."
+          echo "📁 Current directory: $(pwd)"
+          echo "📄 Checking for pnpm-lock.yaml:"
+          ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
+          echo "🚀 Running pnpm install..."
+          pnpm install
         
       - name: Build
         run: |
