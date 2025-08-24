@@ -12,6 +12,7 @@ env:
   MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
   MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
   MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
 jobs:
   deploy-production:
@@ -52,11 +53,14 @@ jobs:
           echo "  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:+SET}"
           echo "  MAERSK_API_KEY: ${MAERSK_API_KEY:+SET}"
           echo "  MAERSK_API_SECRET: ${MAERSK_API_SECRET:+SET}"
+          echo "  DATABASE_URL: ${DATABASE_URL:+SET}"
           echo "  VERCEL_TOKEN: ${VERCEL_TOKEN:+SET}"
           echo "  VERCEL_ORG_ID: ${VERCEL_ORG_ID:+SET}"
           echo "  VERCEL_PROJECT_ID: ${VERCEL_PROJECT_ID:+SET}"
+          echo "🔧 Generating Prisma client..."
+          pnpm --filter web exec prisma generate
           echo "🚀 Running build..."
-          pnpm build || (echo "❌ Build failed with exit code $?" && exit 1)
+          pnpm --filter web build || (echo "❌ Build failed with exit code $?" && exit 1)
           echo "✅ Build completed successfully!"
           
       - name: Deploy to Vercel (Production)
