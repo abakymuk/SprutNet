@@ -82,6 +82,7 @@ jobs:
         run: |
           echo "🔧 Generating Prisma client..."
           pnpm prisma:generate
+          echo "✅ Prisma client generated successfully"
         
       - name: Type check
         run: pnpm type-check
@@ -89,12 +90,6 @@ jobs:
       - name: Unit tests
         run: pnpm test
         if: hashFiles('**/*.test.{js,ts,jsx,tsx}') != ''
-        
-      - name: Generate Prisma Client for Build
-        run: |
-          echo "🔧 Generating Prisma client for build..."
-          pnpm prisma:generate
-          echo "✅ Prisma client generated successfully"
         
       - name: Build
         run: |
