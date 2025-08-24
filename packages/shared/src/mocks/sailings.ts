@@ -29,6 +29,22 @@ const mockVessels: Vessel[] = [
     capacity: 16020,
     builtYear: 2012,
     flag: 'United Kingdom'
+  },
+  {
+    imoNumber: '9456786',
+    name: 'MAERSK SEVILLE',
+    carrierCode: 'MAEU',
+    capacity: 18000,
+    builtYear: 2016,
+    flag: 'Denmark'
+  },
+  {
+    imoNumber: '9456787',
+    name: 'COSCO SHIPPING UNIVERSE',
+    carrierCode: 'COSU',
+    capacity: 21000,
+    builtYear: 2019,
+    flag: 'Hong Kong'
   }
 ];
 
@@ -36,6 +52,7 @@ const mockVessels: Vessel[] = [
  * Моковые данные расписаний рейсов
  */
 export const mockSailings: Sailing[] = [
+  // Существующие рейсы
   {
     id: 'SAIL-001',
     carrierCode: 'MSCU',
@@ -148,25 +165,34 @@ export const mockSailings: Sailing[] = [
     },
     rates: [
       {
-        containerType: ContainerType.TEU_40HC,
-        baseRate: 2800,
+        containerType: ContainerType.TEU_20,
+        baseRate: 1800,
         surcharges: [
           {
             name: 'Bunker Adjustment Factor',
-            amount: 300,
-            currency: 'USD',
-            description: 'Fuel surcharge'
-          },
-          {
-            name: 'Peak Season Surcharge',
             amount: 200,
             currency: 'USD',
-            description: 'Peak season additional charge'
+            description: 'Fuel surcharge'
           }
         ],
-        totalCost: 3300,
+        totalCost: 2000,
         currency: 'USD',
-        validUntil: new Date('2024-04-15T23:59:59Z')
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      },
+      {
+        containerType: ContainerType.TEU_40,
+        baseRate: 3000,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 350,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 3350,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
       }
     ],
     deadlines: [],
@@ -180,11 +206,11 @@ export const mockSailings: Sailing[] = [
     voyageNumber: 'CMA-003',
     originPort: mockPorts[2], // Rotterdam
     destinationPort: mockPorts[4], // New York
-    departureDate: new Date('2024-03-01T16:00:00Z'),
-    arrivalDate: new Date('2024-03-10T12:00:00Z'),
+    departureDate: new Date('2024-03-20T08:00:00Z'),
+    arrivalDate: new Date('2024-03-29T12:00:00Z'),
     containerType: ContainerType.TEU_40,
-    availableCapacity: 2000,
-    totalCapacity: 2500,
+    availableCapacity: 1200,
+    totalCapacity: 1800,
     status: SailingStatus.SCHEDULED,
     vessel: mockVessels[2],
     route: {
@@ -193,14 +219,14 @@ export const mockSailings: Sailing[] = [
       waypoints: [
         {
           port: mockPorts[2], // Rotterdam
-          arrivalDate: new Date('2024-03-01T14:00:00Z'),
-          departureDate: new Date('2024-03-01T16:00:00Z'),
+          arrivalDate: new Date('2024-03-20T06:00:00Z'),
+          departureDate: new Date('2024-03-20T08:00:00Z'),
           type: WaypointType.LOADING
         },
         {
           port: mockPorts[4], // New York
-          arrivalDate: new Date('2024-03-10T12:00:00Z'),
-          departureDate: new Date('2024-03-10T14:00:00Z'),
+          arrivalDate: new Date('2024-03-29T12:00:00Z'),
+          departureDate: new Date('2024-03-29T14:00:00Z'),
           type: WaypointType.DISCHARGE
         }
       ],
@@ -242,6 +268,428 @@ export const mockSailings: Sailing[] = [
     deadlines: [],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01')
+  },
+  // Новые рейсы для популярных маршрутов
+  {
+    id: 'SAIL-004',
+    carrierCode: 'MAEU',
+    carrierName: 'Maersk Line',
+    voyageNumber: 'MAEU-004',
+    originPort: mockPorts[0], // Shanghai
+    destinationPort: mockPorts[4], // New York
+    departureDate: new Date('2024-02-20T10:00:00Z'),
+    arrivalDate: new Date('2024-03-15T14:00:00Z'),
+    containerType: ContainerType.TEU_40,
+    availableCapacity: 2000,
+    totalCapacity: 2500,
+    status: SailingStatus.SCHEDULED,
+    vessel: mockVessels[3],
+    route: {
+      id: 'ROUTE-004',
+      name: 'Asia-America Express',
+      waypoints: [
+        {
+          port: mockPorts[0], // Shanghai
+          arrivalDate: new Date('2024-02-20T08:00:00Z'),
+          departureDate: new Date('2024-02-20T10:00:00Z'),
+          type: WaypointType.LOADING
+        },
+        {
+          port: mockPorts[4], // New York
+          arrivalDate: new Date('2024-03-15T14:00:00Z'),
+          departureDate: new Date('2024-03-15T16:00:00Z'),
+          type: WaypointType.DISCHARGE
+        }
+      ],
+      duration: 23,
+      distance: 12000
+    },
+    rates: [
+      {
+        containerType: ContainerType.TEU_20,
+        baseRate: 2500,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 300,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 2800,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      },
+      {
+        containerType: ContainerType.TEU_40,
+        baseRate: 4000,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 500,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 4500,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      }
+    ],
+    deadlines: [],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  {
+    id: 'SAIL-005',
+    carrierCode: 'COSU',
+    carrierName: 'COSCO Shipping',
+    voyageNumber: 'COSU-005',
+    originPort: mockPorts[0], // Shanghai
+    destinationPort: mockPorts[2], // Rotterdam
+    departureDate: new Date('2024-02-18T12:00:00Z'),
+    arrivalDate: new Date('2024-03-12T08:00:00Z'),
+    containerType: ContainerType.TEU_40HC,
+    availableCapacity: 1800,
+    totalCapacity: 2200,
+    status: SailingStatus.SCHEDULED,
+    vessel: mockVessels[4],
+    route: {
+      id: 'ROUTE-005',
+      name: 'Asia-Europe Premium',
+      waypoints: [
+        {
+          port: mockPorts[0], // Shanghai
+          arrivalDate: new Date('2024-02-18T10:00:00Z'),
+          departureDate: new Date('2024-02-18T12:00:00Z'),
+          type: WaypointType.LOADING
+        },
+        {
+          port: mockPorts[2], // Rotterdam
+          arrivalDate: new Date('2024-03-12T08:00:00Z'),
+          departureDate: new Date('2024-03-12T10:00:00Z'),
+          type: WaypointType.DISCHARGE
+        }
+      ],
+      duration: 22,
+      distance: 11000
+    },
+    rates: [
+      {
+        containerType: ContainerType.TEU_20,
+        baseRate: 2200,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 250,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 2450,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      },
+      {
+        containerType: ContainerType.TEU_40,
+        baseRate: 3500,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 400,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 3900,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      }
+    ],
+    deadlines: [],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  {
+    id: 'SAIL-006',
+    carrierCode: 'MSCU',
+    carrierName: 'Mediterranean Shipping Company',
+    voyageNumber: 'MSC-006',
+    originPort: mockPorts[4], // New York
+    destinationPort: mockPorts[0], // Shanghai
+    departureDate: new Date('2024-03-01T10:00:00Z'),
+    arrivalDate: new Date('2024-03-25T14:00:00Z'),
+    containerType: ContainerType.TEU_40,
+    availableCapacity: 1600,
+    totalCapacity: 2000,
+    status: SailingStatus.SCHEDULED,
+    vessel: mockVessels[0],
+    route: {
+      id: 'ROUTE-006',
+      name: 'America-Asia Express',
+      waypoints: [
+        {
+          port: mockPorts[4], // New York
+          arrivalDate: new Date('2024-03-01T08:00:00Z'),
+          departureDate: new Date('2024-03-01T10:00:00Z'),
+          type: WaypointType.LOADING
+        },
+        {
+          port: mockPorts[0], // Shanghai
+          arrivalDate: new Date('2024-03-25T14:00:00Z'),
+          departureDate: new Date('2024-03-25T16:00:00Z'),
+          type: WaypointType.DISCHARGE
+        }
+      ],
+      duration: 24,
+      distance: 12000
+    },
+    rates: [
+      {
+        containerType: ContainerType.TEU_20,
+        baseRate: 2400,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 280,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 2680,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      },
+      {
+        containerType: ContainerType.TEU_40,
+        baseRate: 3800,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 450,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 4250,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      }
+    ],
+    deadlines: [],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  // Рейсы с российскими портами
+  {
+    id: 'SAIL-007',
+    carrierCode: 'MAEU',
+    carrierName: 'Maersk Line',
+    voyageNumber: 'MAEU-007',
+    originPort: mockPorts[10], // St. Petersburg
+    destinationPort: mockPorts[0], // Shanghai
+    departureDate: new Date('2024-02-22T08:00:00Z'),
+    arrivalDate: new Date('2024-03-18T14:00:00Z'),
+    containerType: ContainerType.TEU_40,
+    availableCapacity: 1200,
+    totalCapacity: 1500,
+    status: SailingStatus.SCHEDULED,
+    vessel: mockVessels[3],
+    route: {
+      id: 'ROUTE-007',
+      name: 'Baltic-Asia Express',
+      waypoints: [
+        {
+          port: mockPorts[10], // St. Petersburg
+          arrivalDate: new Date('2024-02-22T06:00:00Z'),
+          departureDate: new Date('2024-02-22T08:00:00Z'),
+          type: WaypointType.LOADING
+        },
+        {
+          port: mockPorts[0], // Shanghai
+          arrivalDate: new Date('2024-03-18T14:00:00Z'),
+          departureDate: new Date('2024-03-18T16:00:00Z'),
+          type: WaypointType.DISCHARGE
+        }
+      ],
+      duration: 24,
+      distance: 13000
+    },
+    rates: [
+      {
+        containerType: ContainerType.TEU_20,
+        baseRate: 2800,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 350,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 3150,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      },
+      {
+        containerType: ContainerType.TEU_40,
+        baseRate: 4500,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 550,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 5050,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      }
+    ],
+    deadlines: [],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  {
+    id: 'SAIL-008',
+    carrierCode: 'EGLV',
+    carrierName: 'Evergreen Marine',
+    voyageNumber: 'EG-008',
+    originPort: mockPorts[11], // Novorossiysk
+    destinationPort: mockPorts[2], // Rotterdam
+    departureDate: new Date('2024-02-28T10:00:00Z'),
+    arrivalDate: new Date('2024-03-20T08:00:00Z'),
+    containerType: ContainerType.TEU_40HC,
+    availableCapacity: 900,
+    totalCapacity: 1200,
+    status: SailingStatus.SCHEDULED,
+    vessel: mockVessels[1],
+    route: {
+      id: 'ROUTE-008',
+      name: 'Black Sea-Europe',
+      waypoints: [
+        {
+          port: mockPorts[11], // Novorossiysk
+          arrivalDate: new Date('2024-02-28T08:00:00Z'),
+          departureDate: new Date('2024-02-28T10:00:00Z'),
+          type: WaypointType.LOADING
+        },
+        {
+          port: mockPorts[2], // Rotterdam
+          arrivalDate: new Date('2024-03-20T08:00:00Z'),
+          departureDate: new Date('2024-03-20T10:00:00Z'),
+          type: WaypointType.DISCHARGE
+        }
+      ],
+      duration: 20,
+      distance: 9000
+    },
+    rates: [
+      {
+        containerType: ContainerType.TEU_20,
+        baseRate: 2000,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 250,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 2250,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      },
+      {
+        containerType: ContainerType.TEU_40,
+        baseRate: 3200,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 400,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 3600,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      }
+    ],
+    deadlines: [],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  {
+    id: 'SAIL-009',
+    carrierCode: 'COSU',
+    carrierName: 'COSCO Shipping',
+    voyageNumber: 'COSU-009',
+    originPort: mockPorts[12], // Vladivostok
+    destinationPort: mockPorts[0], // Shanghai
+    departureDate: new Date('2024-02-25T12:00:00Z'),
+    arrivalDate: new Date('2024-03-05T14:00:00Z'),
+    containerType: ContainerType.TEU_40,
+    availableCapacity: 1400,
+    totalCapacity: 1800,
+    status: SailingStatus.SCHEDULED,
+    vessel: mockVessels[4],
+    route: {
+      id: 'ROUTE-009',
+      name: 'Far East-Asia',
+      waypoints: [
+        {
+          port: mockPorts[12], // Vladivostok
+          arrivalDate: new Date('2024-02-25T10:00:00Z'),
+          departureDate: new Date('2024-02-25T12:00:00Z'),
+          type: WaypointType.LOADING
+        },
+        {
+          port: mockPorts[0], // Shanghai
+          arrivalDate: new Date('2024-03-05T14:00:00Z'),
+          departureDate: new Date('2024-03-05T16:00:00Z'),
+          type: WaypointType.DISCHARGE
+        }
+      ],
+      duration: 8,
+      distance: 2000
+    },
+    rates: [
+      {
+        containerType: ContainerType.TEU_20,
+        baseRate: 800,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 100,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 900,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      },
+      {
+        containerType: ContainerType.TEU_40,
+        baseRate: 1200,
+        surcharges: [
+          {
+            name: 'Bunker Adjustment Factor',
+            amount: 150,
+            currency: 'USD',
+            description: 'Fuel surcharge'
+          }
+        ],
+        totalCost: 1350,
+        currency: 'USD',
+        validUntil: new Date('2024-04-01T23:59:59Z')
+      }
+    ],
+    deadlines: [],
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
   }
 ];
 
@@ -257,34 +705,60 @@ export function searchSailings(
   containerType?: ContainerType,
   limit: number = 10
 ): Sailing[] {
-  return mockSailings
+  console.log('🔍 searchSailings called with:', {
+    originPortId,
+    destinationPortId,
+    departureDateFrom,
+    departureDateTo,
+    carrierCode,
+    containerType,
+    limit
+  });
+  
+  console.log('📋 Available sailings:', mockSailings.map(s => ({
+    id: s.id,
+    origin: s.originPort.id,
+    destination: s.destinationPort.id,
+    carrier: s.carrierCode
+  })));
+  
+  const filtered = mockSailings
     .filter(sailing => {
       // Фильтр по портам
       if (sailing.originPort.id !== originPortId || sailing.destinationPort.id !== destinationPortId) {
+        console.log(`❌ Port mismatch: ${sailing.originPort.id}->${sailing.destinationPort.id} vs ${originPortId}->${destinationPortId}`);
         return false;
       }
       
       // Фильтр по дате отправления
       if (departureDateFrom && sailing.departureDate < departureDateFrom) {
+        console.log(`❌ Date too early: ${sailing.departureDate} < ${departureDateFrom}`);
         return false;
       }
       if (departureDateTo && sailing.departureDate > departureDateTo) {
+        console.log(`❌ Date too late: ${sailing.departureDate} > ${departureDateTo}`);
         return false;
       }
       
       // Фильтр по перевозчику
       if (carrierCode && sailing.carrierCode !== carrierCode) {
+        console.log(`❌ Carrier mismatch: ${sailing.carrierCode} vs ${carrierCode}`);
         return false;
       }
       
       // Фильтр по типу контейнера
       if (containerType && sailing.containerType !== containerType) {
+        console.log(`❌ Container type mismatch: ${sailing.containerType} vs ${containerType}`);
         return false;
       }
       
+      console.log(`✅ Sailing ${sailing.id} passed all filters`);
       return true;
     })
     .slice(0, limit);
+    
+  console.log('📊 Final results:', filtered.length);
+  return filtered;
 }
 
 /**

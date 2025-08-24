@@ -165,6 +165,121 @@ export const mockPorts: PortRef[] = [
     isActive: true,
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01')
+  },
+  // Добавляем популярные российские порты
+  {
+    id: 'RUULU',
+    name: 'Port of St. Petersburg',
+    countryCode: 'RU',
+    countryName: 'Russia',
+    cityCode: 'LED',
+    cityName: 'St. Petersburg',
+    type: PortType.SEAPORT,
+    coordinates: {
+      latitude: 59.9311,
+      longitude: 30.3609
+    },
+    isActive: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  {
+    id: 'RUNOV',
+    name: 'Port of Novorossiysk',
+    countryCode: 'RU',
+    countryName: 'Russia',
+    cityCode: 'NOV',
+    cityName: 'Novorossiysk',
+    type: PortType.SEAPORT,
+    coordinates: {
+      latitude: 44.7239,
+      longitude: 37.7683
+    },
+    isActive: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  {
+    id: 'RUVVO',
+    name: 'Port of Vladivostok',
+    countryCode: 'RU',
+    countryName: 'Russia',
+    cityCode: 'VVO',
+    cityName: 'Vladivostok',
+    type: PortType.SEAPORT,
+    coordinates: {
+      latitude: 43.1198,
+      longitude: 131.8869
+    },
+    isActive: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  // Добавляем популярные европейские порты
+  {
+    id: 'ESVLC',
+    name: 'Port of Valencia',
+    countryCode: 'ES',
+    countryName: 'Spain',
+    cityCode: 'VLC',
+    cityName: 'Valencia',
+    type: PortType.SEAPORT,
+    coordinates: {
+      latitude: 39.4699,
+      longitude: -0.3763
+    },
+    isActive: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  {
+    id: 'ITGIT',
+    name: 'Port of Gioia Tauro',
+    countryCode: 'IT',
+    countryName: 'Italy',
+    cityCode: 'GIT',
+    cityName: 'Gioia Tauro',
+    type: PortType.SEAPORT,
+    coordinates: {
+      latitude: 38.4500,
+      longitude: 15.9000
+    },
+    isActive: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  // Добавляем популярные азиатские порты
+  {
+    id: 'HKHKG',
+    name: 'Port of Hong Kong',
+    countryCode: 'HK',
+    countryName: 'Hong Kong',
+    cityCode: 'HKG',
+    cityName: 'Hong Kong',
+    type: PortType.SEAPORT,
+    coordinates: {
+      latitude: 22.3193,
+      longitude: 114.1694
+    },
+    isActive: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
+  },
+  {
+    id: 'TWKHH',
+    name: 'Port of Kaohsiung',
+    countryCode: 'TW',
+    countryName: 'Taiwan',
+    cityCode: 'KHH',
+    cityName: 'Kaohsiung',
+    type: PortType.SEAPORT,
+    coordinates: {
+      latitude: 22.6273,
+      longitude: 120.3014
+    },
+    isActive: true,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01')
   }
 ];
 

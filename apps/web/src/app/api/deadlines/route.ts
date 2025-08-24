@@ -10,6 +10,8 @@ export async function GET(request: Request) {
     const vesselImo = searchParams.get('vesselImo');
     const voyage = searchParams.get('voyage');
 
+    console.log("🔍 Deadlines API called with:", { sailingId, vesselImo, voyage });
+
     if (!sailingId && !vesselImo && !voyage) {
       return NextResponse.json(
         { error: 'Необходимо указать sailingId, vesselImo или voyage' },

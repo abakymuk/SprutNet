@@ -77,6 +77,7 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import type { PortRef } from "@sprutnet/shared/types";
+import { useSearchContext } from "@/contexts/search-context";
 
 interface SearchFormProps {
   onSearch: (
@@ -98,20 +99,29 @@ interface SearchOptions {
 }
 
 export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
-  const [originPort, setOriginPort] = useState<PortRef | null>(null);
-  const [destinationPort, setDestinationPort] = useState<PortRef | null>(null);
-  const [departureDateFrom, setDepartureDateFrom] = useState<Date | undefined>(
-    undefined
-  );
-  const [departureDateTo, setDepartureDateTo] = useState<Date | undefined>(
-    undefined
-  );
+  const {
+    searchState,
+    setOriginPort,
+    setDestinationPort,
+    setDepartureDateFrom,
+    setDepartureDateTo,
+  } = useSearchContext();
+
+  const { originPort, destinationPort, departureDateFrom, departureDateTo } =
+    searchState;
+
+  // Показываем плейсхолдеры до инициализации контекста
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const [searchOptions, setSearchOptions] = useState<SearchOptions>({
     includeTransshipment: true,
     directRoutesOnly: false,
     sortBy: "best",
-    containerTypes: ["20GP", "40GP", "40HC"],
+    containerTypes: ["20FT", "40FT", "40HC"],
     maxTransitDays: 30,
   });
 
@@ -176,8 +186,8 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
     onSearch(
       originPort,
       destinationPort,
-      departureDateFrom || null,
-      departureDateTo || null,
+      departureDateFrom,
+      departureDateTo,
       searchOptions
     );
   };
@@ -186,12 +196,12 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
 
   const containerTypeOptions = [
     {
-      id: "20GP",
+      id: "20FT",
       label: "20' GP",
       description: "20-футовый стандартный контейнер",
     },
     {
-      id: "40GP",
+      id: "40FT",
       label: "40' GP",
       description: "40-футовый стандартный контейнер",
     },
@@ -201,7 +211,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
       description: "40-футовый высокий контейнер",
     },
     {
-      id: "45HC",
+      id: "45FT",
       label: "45' HC",
       description: "45-футовый высокий контейнер",
     },
@@ -249,7 +259,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                       aria-expanded={isOriginOpen}
                       className="w-full justify-between"
                     >
-                      {originPort ? (
+                      {isClient && originPort ? (
                         <span className="truncate">
                           {originPort.name} ({originPort.cityName},{" "}
                           {originPort.countryName})
@@ -322,7 +332,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                       aria-expanded={isDestinationOpen}
                       className="w-full justify-between"
                     >
-                      {destinationPort ? (
+                      {isClient && destinationPort ? (
                         <span className="truncate">
                           {destinationPort.name} ({destinationPort.cityName},{" "}
                           {destinationPort.countryName})
@@ -387,7 +397,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {departureDateFrom
+                      {isClient && departureDateFrom
                         ? format(departureDateFrom, "PPP", { locale: ru })
                         : "Выберите дату"}
                     </Button>
@@ -395,8 +405,12 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={departureDateFrom}
-                      onSelect={setDepartureDateFrom}
+                      selected={
+                        isClient && departureDateFrom
+                          ? departureDateFrom
+                          : undefined
+                      }
+                      onSelect={(date) => setDepartureDateFrom(date || null)}
                       initialFocus
                       locale={ru}
                     />
@@ -418,7 +432,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {departureDateTo
+                      {isClient && departureDateTo
                         ? format(departureDateTo, "PPP", { locale: ru })
                         : "Выберите дату"}
                     </Button>
@@ -426,8 +440,12 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
-                      selected={departureDateTo}
-                      onSelect={setDepartureDateTo}
+                      selected={
+                        isClient && departureDateTo
+                          ? departureDateTo
+                          : undefined
+                      }
+                      onSelect={(date) => setDepartureDateTo(date || null)}
                       initialFocus
                       locale={ru}
                     />

@@ -24,17 +24,15 @@ import {
   BarChart3,
 } from "lucide-react";
 import Link from "next/link";
+import { useSearchContext } from "@/contexts/search-context";
 
 export default function PlannerPage() {
-  const [searchResults, setSearchResults] = useState<Sailing[]>([]);
+  const { searchState, setSearchResults } = useSearchContext();
+  const { searchResults, originPort, destinationPort } = searchState;
+
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedOriginPort, setSelectedOriginPort] = useState<PortRef | null>(
-    null
-  );
-  const [selectedDestinationPort, setSelectedDestinationPort] =
-    useState<PortRef | null>(null);
 
   const handleSearch = async (
     originPort: PortRef | null,
@@ -51,8 +49,6 @@ export default function PlannerPage() {
     setIsLoading(true);
     setError(null);
     setHasSearched(true);
-    setSelectedOriginPort(originPort);
-    setSelectedDestinationPort(destinationPort);
 
     try {
       const params = new URLSearchParams({
@@ -75,6 +71,8 @@ export default function PlannerPage() {
       }
 
       const data = await response.json();
+      console.log("📥 Received data from API:", data);
+      console.log("📊 Sailings count:", data.sailings?.length || 0);
       setSearchResults(data.sailings || []);
     } catch (error) {
       console.error("Error searching schedules:", error);
@@ -188,8 +186,8 @@ export default function PlannerPage() {
           <TabsContent value="insights" className="space-y-6">
             <LaneInsights
               sailings={searchResults}
-              originPort={selectedOriginPort?.name}
-              destinationPort={selectedDestinationPort?.name}
+              originPort={originPort?.name || ""}
+              destinationPort={destinationPort?.name || ""}
             />
           </TabsContent>
 
@@ -203,7 +201,7 @@ export default function PlannerPage() {
               </CardHeader>
               <CardContent>
                 <SailingResults
-                  sailings={searchResults}
+                  sailings={searchResults || []}
                   isLoading={isLoading}
                   hasSearched={hasSearched}
                 />
@@ -274,6 +272,25 @@ export default function PlannerPage() {
                     критериям.
                   </AlertDescription>
                 </Alert>
+
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-2">Тестирование функций:</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Для тестирования DeadlinesModal:
+                  </p>
+                  <ol className="text-sm space-y-1">
+                    <li>1. Перейдите на вкладку "Поиск рейсов"</li>
+                    <li>2. Выберите порты отправления и назначения</li>
+                    <li>3. Нажмите "Найти рейсы"</li>
+                    <li>4. Перейдите на вкладку "Результаты"</li>
+                    <li>
+                      5. Найдите кнопку с иконкой часов (⏰) в результатах
+                    </li>
+                    <li>
+                      6. Нажмите на неё для открытия модального окна дедлайнов
+                    </li>
+                  </ol>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

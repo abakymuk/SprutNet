@@ -171,7 +171,7 @@ export function SailingResults({
   const [showFavorites, setShowFavorites] = useState(false);
   const [selectedContainerTypes, setSelectedContainerTypes] = useState<
     string[]
-  >(["20GP", "40GP", "40HC"]);
+  >(["20FT", "40FT", "40HC"]);
   const [maxPrice, setMaxPrice] = useState<number>(5000);
   const [selectedSailing, setSelectedSailing] = useState<Sailing | null>(null);
 
@@ -212,19 +212,39 @@ export function SailingResults({
 
   // Filter sailings based on criteria
   const filteredSailings = useMemo(() => {
-    return sortedSailings.filter((sailing) => {
+    console.log("🔍 Filtering sailings:", {
+      totalSailings: sortedSailings.length,
+      maxPrice,
+      selectedContainerTypes,
+    });
+
+    const filtered = sortedSailings.filter((sailing) => {
       const mainRate = sailing.rates[0];
-      if (!mainRate) return false;
+      if (!mainRate) {
+        console.log(`❌ No rates for sailing ${sailing.id}`);
+        return false;
+      }
 
       // Price filter
-      if (mainRate.totalCost > maxPrice) return false;
+      if (mainRate.totalCost > maxPrice) {
+        console.log(`❌ Price too high: ${mainRate.totalCost} > ${maxPrice}`);
+        return false;
+      }
 
       // Container type filter
-      if (!selectedContainerTypes.includes(mainRate.containerType))
+      if (!selectedContainerTypes.includes(mainRate.containerType)) {
+        console.log(
+          `❌ Container type not selected: ${mainRate.containerType}`
+        );
         return false;
+      }
 
+      console.log(`✅ Sailing ${sailing.id} passed filters`);
       return true;
     });
+
+    console.log("📊 Filtered results:", filtered.length);
+    return filtered;
   }, [sortedSailings, maxPrice, selectedContainerTypes]);
 
   // Determine best sailings for highlighting
@@ -270,10 +290,10 @@ export function SailingResults({
   };
 
   const containerTypeOptions = [
-    { id: "20GP", label: "20' GP" },
-    { id: "40GP", label: "40' GP" },
+    { id: "20FT", label: "20' GP" },
+    { id: "40FT", label: "40' GP" },
     { id: "40HC", label: "40' HC" },
-    { id: "45HC", label: "45' HC" },
+    { id: "45FT", label: "45' HC" },
   ];
 
   if (isLoading) {

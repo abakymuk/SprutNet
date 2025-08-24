@@ -133,6 +133,7 @@ export function DeadlinesModal({ sailing, children }: DeadlinesModalProps) {
     setError(null);
 
     try {
+      console.log("🔍 Fetching deadlines for sailing:", sailing.id);
       const response = await fetch(`/api/deadlines?sailingId=${sailing.id}`);
 
       if (!response.ok) {
@@ -140,9 +141,10 @@ export function DeadlinesModal({ sailing, children }: DeadlinesModalProps) {
       }
 
       const data = await response.json();
+      console.log("📅 Deadlines data:", data);
       setDeadlines(data.deadlines || []);
     } catch (err) {
-      console.error("Error fetching deadlines:", err);
+      console.error("❌ Error fetching deadlines:", err);
       setError("Ошибка при загрузке дедлайнов");
     } finally {
       setIsLoading(false);
