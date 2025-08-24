@@ -61,7 +61,9 @@ jobs:
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
+          path: |
+            ${{ env.STORE_PATH }}
+            .next/cache
           key: ${{ needs.setup.outputs.cache-key }}
           restore-keys: |
             node-${{ runner.os }}-
@@ -74,9 +76,25 @@ jobs:
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install..."
           pnpm install
+          
+      - name: Verify Prisma Dependencies
+        run: |
+          echo "🔍 Verifying Prisma dependencies..."
+          echo "📦 Prisma CLI version:"
+          pnpm exec prisma --version
+          echo "📦 @prisma/client version:"
+          pnpm list @prisma/client
+          echo "✅ Prisma dependencies verified"
         
       - name: Lint
         run: pnpm lint
+        
+      - name: Verify Prisma Schema
+        run: |
+          echo "🔍 Verifying Prisma schema..."
+          cd apps/web
+          npx prisma validate
+          echo "✅ Prisma schema is valid"
         
       - name: Generate Prisma Client
         run: |
