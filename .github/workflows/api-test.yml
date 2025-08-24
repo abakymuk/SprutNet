@@ -1,0 +1,242 @@
+name: API Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 6 * * *'  # Run daily at 6 AM UTC
+  workflow_dispatch:
+
+env:
+  MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
+  MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
+  MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
+
+jobs:
+  api-health-check:
+    name: API Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '8'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Test Vessels API
+        run: |
+          echo "🧪 Testing Vessels API..."
+          node -e "
+          const https = require('node:https');
+          
+          const options = {
+            hostname: 'api.maersk.com',
+            port: 443,
+            path: '/reference-data/vessels?limit=1',
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Consumer-Key': process.env.MAERSK_API_KEY,
+              'User-Agent': 'SprutNet/1.0'
+            }
+          };
+          
+          const req = https.request(options, (res) => {
+            console.log('Status:', res.statusCode);
+            if (res.statusCode === 200) {
+              console.log('✅ Vessels API is working');
+              process.exit(0);
+            } else {
+              console.log('❌ Vessels API failed');
+              process.exit(1);
+            }
+          });
+          
+          req.on('error', (e) => {
+            console.error('❌ Error:', e.message);
+            process.exit(1);
+          });
+          
+          req.end();
+          "
+        env:
+          MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
+          
+      - name: Test Locations API
+        run: |
+          echo "🧪 Testing Locations API..."
+          node -e "
+          const https = require('node:https');
+          
+          const options = {
+            hostname: 'api.maersk.com',
+            port: 443,
+            path: '/reference-data/locations?countryCode=US&limit=1',
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Consumer-Key': process.env.MAERSK_API_KEY,
+              'User-Agent': 'SprutNet/1.0'
+            }
+          };
+          
+          const req = https.request(options, (res) => {
+            console.log('Status:', res.statusCode);
+            if (res.statusCode === 200) {
+              console.log('✅ Locations API is working');
+              process.exit(0);
+            } else {
+              console.log('❌ Locations API failed');
+              process.exit(1);
+            }
+          });
+          
+          req.on('error', (e) => {
+            console.error('❌ Error:', e.message);
+            process.exit(1);
+          });
+          
+          req.end();
+          "
+        env:
+          MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
+          
+      - name: Test Ocean Products API
+        run: |
+          echo "🧪 Testing Ocean Products API..."
+          node -e "
+          const https = require('node:https');
+          
+          const params = new URLSearchParams({
+            collectionOriginCountryCode: 'US',
+            collectionOriginCityName: 'Houston',
+            deliveryDestinationCountryCode: 'NL',
+            deliveryDestinationCityName: 'Rotterdam',
+            vesselOperatorCarrierCode: 'MAEU',
+            cargoType: 'DRY',
+            ISOEquipmentCode: '42G1',
+            stuffingWeight: '18000',
+            weightMeasurementUnit: 'KGS',
+            stuffingVolume: '10',
+            volumeMeasurementUnit: 'MTQ',
+            exportServiceMode: 'CY',
+            importServiceMode: 'CY',
+            startDateType: 'D',
+            dateRange: 'P4W'
+          });
+          
+          const options = {
+            hostname: 'api.maersk.com',
+            port: 443,
+            path: '/products/ocean-products?' + params.toString(),
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Consumer-Key': process.env.MAERSK_API_KEY,
+              'User-Agent': 'SprutNet/1.0'
+            }
+          };
+          
+          const req = https.request(options, (res) => {
+            console.log('Status:', res.statusCode);
+            if (res.statusCode === 200) {
+              console.log('✅ Ocean Products API is working');
+              process.exit(0);
+            } else {
+              console.log('❌ Ocean Products API failed');
+              process.exit(1);
+            }
+          });
+          
+          req.on('error', (e) => {
+            console.error('❌ Error:', e.message);
+            process.exit(1);
+          });
+          
+          req.end();
+          "
+        env:
+          MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
+          
+      - name: Test Deadlines API
+        run: |
+          echo "🧪 Testing Deadlines API..."
+          node -e "
+          const https = require('node:https');
+          
+          const params = new URLSearchParams({
+            ISOCountryCode: 'US',
+            portOfLoad: 'Houston',
+            vesselIMONumber: '9332987',
+            voyage: '535E'
+          });
+          
+          const options = {
+            hostname: 'api.maersk.com',
+            port: 443,
+            path: '/shipment-deadlines?' + params.toString(),
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Consumer-Key': process.env.MAERSK_API_KEY,
+              'User-Agent': 'SprutNet/1.0'
+            }
+          };
+          
+          const req = https.request(options, (res) => {
+            console.log('Status:', res.statusCode);
+            if (res.statusCode === 200) {
+              console.log('✅ Deadlines API is working');
+              process.exit(0);
+            } else {
+              console.log('❌ Deadlines API failed');
+              process.exit(1);
+            }
+          });
+          
+          req.on('error', (e) => {
+            console.error('❌ Error:', e.message);
+            process.exit(1);
+          });
+          
+          req.end();
+          "
+        env:
+          MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
+          
+      - name: Generate API Status Report
+        run: |
+          echo "📊 Generating API Status Report..."
+          echo "## API Health Check Report" >> api-status.md
+          echo "**Date:** $(date)" >> api-status.md
+          echo "**Branch:** ${{ github.ref_name }}" >> api-status.md
+          echo "" >> api-status.md
+          echo "### Test Results:" >> api-status.md
+          echo "- ✅ Vessels API: Working" >> api-status.md
+          echo "- ✅ Locations API: Working" >> api-status.md
+          echo "- ✅ Ocean Products API: Working" >> api-status.md
+          echo "- ✅ Deadlines API: Working" >> api-status.md
+          echo "" >> api-status.md
+          echo "### Summary:" >> api-status.md
+          echo "All 4 main APIs are functioning correctly." >> api-status.md
+          
+      - name: Upload API Status Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: api-status-report
+          path: api-status.md

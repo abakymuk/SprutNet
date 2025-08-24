@@ -1,0 +1,169 @@
+name: CI - Quality Gate
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
+  MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
+  MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache-key.outputs.value }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Generate cache key
+        id: cache-key
+        run: |
+          echo "value=node-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}" >> $GITHUB_OUTPUT
+
+  quality:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: setup
+    timeout-minutes: 20
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Enable corepack
+        run: corepack enable
+        
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '8'
+          
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ needs.setup.outputs.cache-key }}
+          restore-keys: |
+            node-${{ runner.os }}-
+            
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Lint
+        run: pnpm lint
+        
+      - name: Type check
+        run: pnpm type-check
+        
+      - name: Unit tests
+        run: pnpm test
+        if: hashFiles('**/*.test.{js,ts,jsx,tsx}') != ''
+        
+      - name: Build
+        run: |
+          echo "🔧 Starting build process..."
+          echo "📁 Current directory: $(pwd)"
+          echo "📦 Node version: $(node --version)"
+          echo "📦 pnpm version: $(pnpm --version)"
+          echo "🔍 Environment variables check:"
+          echo "  NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:+SET}"
+          echo "  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY:+SET}"
+          echo "  MAERSK_API_KEY: ${MAERSK_API_KEY:+SET}"
+          echo "  MAERSK_API_SECRET: ${MAERSK_API_SECRET:+SET}"
+          echo "🚀 Running build..."
+          pnpm build || (echo "❌ Build failed with exit code $?" && exit 1)
+          echo "✅ Build completed successfully!"
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    needs: setup
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '8'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Security audit
+        run: pnpm audit --audit-level high
+        
+      - name: Check for known vulnerabilities
+        run: |
+          echo "🔍 Checking for known vulnerabilities..."
+          pnpm audit --audit-level moderate || {
+            echo "⚠️  Found moderate or higher vulnerabilities"
+            echo "Please review and fix security issues"
+            exit 1
+          }
+          echo "✅ No high/critical vulnerabilities found"
+
+  database:
+    name: Database Migration Check
+    runs-on: ubuntu-latest
+    needs: setup
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '8'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Check Prisma schema
+        if: hashFiles('supabase/migrations/**', 'prisma/**') != ''
+        run: |
+          echo "🔍 Checking Prisma schema..."
+          cd apps/web
+          npx prisma validate
+          echo "✅ Prisma schema is valid"
+          
+      - name: Generate Prisma client
+        if: hashFiles('supabase/migrations/**', 'prisma/**') != ''
+        run: |
+          echo "🔧 Generating Prisma client..."
+          cd apps/web
+          npx prisma generate
+          echo "✅ Prisma client generated successfully"

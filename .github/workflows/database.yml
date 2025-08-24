@@ -1,0 +1,156 @@
+name: Database Management
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'supabase/migrations/**'
+      - 'prisma/**'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Database action to perform'
+        required: true
+        default: 'migrate'
+        type: choice
+        options:
+          - migrate
+          - reset
+          - seed
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+jobs:
+  database-migrate:
+    name: Database Migration
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event.inputs.action == 'migrate' || github.event_name == 'push'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '8'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Install Supabase CLI
+        run: |
+          curl -fsSL https://supabase.com/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          
+      - name: Setup Supabase
+        run: |
+          echo "🔧 Setting up Supabase..."
+          supabase --version
+          
+      - name: Validate Prisma schema
+        run: |
+          echo "🔍 Validating Prisma schema..."
+          cd apps/web
+          npx prisma validate
+          echo "✅ Prisma schema is valid"
+          
+      - name: Generate Prisma client
+        run: |
+          echo "🔧 Generating Prisma client..."
+          cd apps/web
+          npx prisma generate
+          echo "✅ Prisma client generated"
+          
+      - name: Run database migrations
+        run: |
+          echo "🚀 Running database migrations..."
+          cd apps/web
+          npx prisma db push --accept-data-loss
+          echo "✅ Database migrations completed"
+          
+      - name: Verify database connection
+        run: |
+          echo "🔍 Verifying database connection..."
+          cd apps/web
+          npx prisma db pull
+          echo "✅ Database connection verified"
+
+  database-reset:
+    name: Database Reset
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event.inputs.action == 'reset'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '8'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Reset database
+        run: |
+          echo "⚠️  Resetting database..."
+          cd apps/web
+          npx prisma db push --force-reset
+          echo "✅ Database reset completed"
+          
+      - name: Seed database
+        run: |
+          echo "🌱 Seeding database..."
+          cd apps/web
+          npx prisma db seed
+          echo "✅ Database seeded"
+
+  database-seed:
+    name: Database Seed
+    runs-on: ubuntu-latest
+    environment: production
+    if: github.event.inputs.action == 'seed'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '8'
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Seed database
+        run: |
+          echo "🌱 Seeding database..."
+          cd apps/web
+          npx prisma db seed
+          echo "✅ Database seeded successfully"
