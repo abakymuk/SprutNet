@@ -66,29 +66,31 @@ jobs:
       - name: Validate Prisma schema
         run: |
           echo "🔍 Validating Prisma schema..."
-          cd apps/web
-          npx prisma validate
+          echo "📁 Current directory: $(pwd)"
+          echo "📄 Checking for schema.prisma:"
+          ls -la prisma/schema.prisma || echo "❌ schema.prisma not found in root"
+          npx prisma validate --schema=prisma/schema.prisma
           echo "✅ Prisma schema is valid"
           
       - name: Generate Prisma client
         run: |
           echo "🔧 Generating Prisma client..."
-          cd apps/web
-          npx prisma generate
+          echo "📁 Current directory: $(pwd)"
+          npx prisma generate --schema=prisma/schema.prisma
           echo "✅ Prisma client generated"
           
       - name: Run database migrations
         run: |
           echo "🚀 Running database migrations..."
-          cd apps/web
-          npx prisma db push --accept-data-loss
+          echo "📁 Current directory: $(pwd)"
+          npx prisma db push --schema=prisma/schema.prisma --accept-data-loss
           echo "✅ Database migrations completed"
           
       - name: Verify database connection
         run: |
           echo "🔍 Verifying database connection..."
-          cd apps/web
-          npx prisma db pull
+          echo "📁 Current directory: $(pwd)"
+          npx prisma db pull --schema=prisma/schema.prisma
           echo "✅ Database connection verified"
 
   database-reset:
@@ -123,15 +125,15 @@ jobs:
       - name: Reset database
         run: |
           echo "⚠️  Resetting database..."
-          cd apps/web
-          npx prisma db push --force-reset
+          echo "📁 Current directory: $(pwd)"
+          npx prisma db push --schema=prisma/schema.prisma --force-reset
           echo "✅ Database reset completed"
           
       - name: Seed database
         run: |
           echo "🌱 Seeding database..."
-          cd apps/web
-          npx prisma db seed
+          echo "📁 Current directory: $(pwd)"
+          npx prisma db seed --schema=prisma/schema.prisma
           echo "✅ Database seeded"
 
   database-seed:
