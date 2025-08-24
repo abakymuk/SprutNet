@@ -57,11 +57,14 @@ jobs:
       - name: Install Supabase CLI
         run: |
           curl -fsSL https://supabase.com/install.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
           echo "$HOME/.local/bin" >> $GITHUB_PATH
           
-      - name: Setup Supabase
+      - name: Check Supabase CLI
         run: |
-          echo "🔧 Setting up Supabase..."
+          echo "🔧 Checking Supabase CLI installation..."
+          export PATH="$HOME/.local/bin:$PATH"
+          which supabase
           supabase --version
           
       - name: Validate Prisma schema
