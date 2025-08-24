@@ -72,12 +72,8 @@ jobs:
           echo "🔧 Checking Prisma installation..."
           pnpm list prisma
           pnpm list @prisma/client
-          echo "🔧 Generating Prisma client in root..."
-          pnpm exec prisma generate --schema=prisma/schema.prisma
-          echo "🔧 Generating Prisma client in apps/web..."
-          cd apps/web
-          pnpm exec prisma generate --schema=prisma/schema.prisma
-          cd ../..
+          echo "🔧 Generating Prisma client..."
+          pnpm prisma:generate
           echo "🚀 Running build..."
           pnpm --filter web build || (echo "❌ Build failed with exit code $?" && exit 1)
           echo "✅ Build completed successfully!"

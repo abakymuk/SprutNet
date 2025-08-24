@@ -11,7 +11,10 @@
     "type-check": "pnpm --filter web type-check",
     "test": "pnpm --filter web test",
     "test:e2e": "pnpm --filter web test:e2e",
-    "clean": "pnpm -r exec rm -rf node_modules && rm -rf node_modules"
+    "clean": "pnpm -r exec rm -rf node_modules && rm -rf node_modules",
+    "prisma:generate": "cd apps/web && npx prisma generate",
+    "prisma:db-push": "cd apps/web && npx prisma db push",
+    "prisma:studio": "cd apps/web && npx prisma studio"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
