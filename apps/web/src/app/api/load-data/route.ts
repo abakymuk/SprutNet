@@ -187,19 +187,25 @@ async function loadDeadlinesData() {
             if (deadlineData.shipmentDeadlines) {
               const shipmentDeadline = await prisma.shipmentDeadline.create({
                 data: {
-                  vesselImoNumber: vessel.id,
-                  voyage: '001E',
-                  portOfLoad: 'Los Angeles',
-                  isoCountryCode: 'US'
+                  id: `deadline-${vessel.id}-${Date.now()}`,
+                  vesselId: vessel.id,
+                  transportId: 'transport-001',
+                  deadlineType: 'CUTOFF',
+                  deadlineDateTime: new Date(),
+                  location: 'USLAX',
+                  description: 'Voyage 001E from Los Angeles'
                 }
               });
               
               for (const deadline of deadlineData.shipmentDeadlines.deadlines) {
                 await prisma.deadline.create({
                   data: {
+                    id: `deadline-detail-${Date.now()}-${Math.random()}`,
                     shipmentDeadlineId: shipmentDeadline.id,
-                    deadlineName: deadline.deadlineName,
-                    deadlineLocal: new Date(deadline.deadlineLocal)
+                    deadlineType: deadline.deadlineType || 'CUTOFF',
+                    deadlineDateTime: new Date(deadline.deadlineLocal),
+                    location: deadline.location,
+                    description: deadline.deadlineName
                   }
                 });
                 totalDeadlines++;
@@ -264,12 +270,11 @@ async function loadOceanProductsData() {
         try {
           const oceanProduct = await prisma.oceanProduct.create({
             data: {
-              vesselOperatorCarrierCode: product.vesselOperatorCarrierCode,
-              carrierProductId: product.carrierProductId,
-              carrierProductSequenceId: product.carrierProductSequenceId,
-              productValidFromDate: product.productValidFromDate,
-              productValidToDate: product.productValidToDate,
-              numberofproductlinks: product.numberOfProductLinks?.toString()
+              id: `product-${product.carrierProductId || Date.now()}`,
+              carrierCode: product.vesselOperatorCarrierCode || 'MAEU',
+              productName: product.carrierProductId || 'Default Product',
+              productType: 'OCEAN',
+              description: `Product ${product.carrierProductId}`
             }
           });
           
@@ -280,10 +285,12 @@ async function loadOceanProductsData() {
             for (const schedule of product.transportSchedules) {
               const transportSchedule = await prisma.transportSchedule.create({
                 data: {
+                  id: `schedule-${Date.now()}-${Math.random()}`,
                   oceanProductId: oceanProduct.id,
-                  departureDateTime: schedule.departureDateTime,
-                  arrivalDateTime: schedule.arrivalDateTime,
-                  transitTime: schedule.transitTime
+                  pol: schedule.pol || 'USLAX',
+                  pod: schedule.pod || 'NLRTM',
+                  effectiveFrom: new Date(schedule.departureDateTime),
+                  effectiveTo: schedule.arrivalDateTime ? new Date(schedule.arrivalDateTime) : null
                 }
               });
               
@@ -292,9 +299,13 @@ async function loadOceanProductsData() {
                 for (const leg of schedule.transportLegs) {
                   const transportLeg = await prisma.transportLeg.create({
                     data: {
-                      transportScheduleId: transportSchedule.id,
-                      departureDateTime: leg.departureDateTime,
-                      arrivalDateTime: leg.arrivalDateTime
+                      id: `leg-${Date.now()}-${Math.random()}`,
+                      scheduleId: transportSchedule.id,
+                      legSequence: leg.legSequence || 1,
+                      transportMode: leg.transportMode || 'OCE',
+                      fromLocation: leg.fromLocation || 'USLAX',
+                      toLocation: leg.toLocation || 'NLRTM',
+                      estimatedDuration: leg.estimatedDuration
                     }
                   });
                   
@@ -303,19 +314,13 @@ async function loadOceanProductsData() {
                     for (const transport of leg.transports) {
                       await prisma.transport.create({
                         data: {
-                          transportLegId: transportLeg.id,
-                          vesselImoNumber: transport.vesselIMONumber,
-                          carrierVesselCode: transport.carrierVesselCode,
-                          vesselName: transport.vesselName,
-                          transportMode: transport.transportMode,
-                          carrierTradeLaneName: transport.carrierTradeLaneName,
-                          carrierDepartureVoyageNumber: transport.carrierDepartureVoyageNumber,
-                          inducementLinkFlag: transport.inducementLinkFlag,
-                          carrierServiceCode: transport.carrierServiceCode,
-                          carrierServiceName: transport.carrierServiceName,
-                          linkDirection: transport.linkDirection,
-                          carrierCode: transport.carrierCode,
-                          routingType: transport.routingType
+                          id: `transport-${Date.now()}-${Math.random()}`,
+                          legId: transportLeg.id,
+                          vesselId: transport.vesselIMONumber,
+                          departureTime: new Date(transport.departureDateTime),
+                          arrivalTime: new Date(transport.arrivalDateTime),
+                          status: 'SCHEDULED',
+                          transportModeId: transport.transportMode || 'OCE'
                         }
                       });
                     }

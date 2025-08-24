@@ -151,38 +151,37 @@ export async function POST() {
     const oceanProducts = await Promise.all([
       prisma.oceanProduct.create({
         data: {
-          vesselOperatorCarrierCode: 'MAEU',
-          carrierProductId: 'TP1',
-          carrierProductSequenceId: '001',
-          productValidFromDate: new Date('2024-01-01'),
-          productValidToDate: new Date('2024-12-31'),
-          numberofproductlinks: '3',
+          id: 'ocean-product-001',
+          carrierCode: 'MAEU',
+          productName: 'TP1',
+          productType: 'OCEAN',
+          description: 'Transpacific Service 1',
           transportSchedules: {
             create: [
               {
-                departureDateTime: new Date('2024-02-01T10:00:00Z'),
-                arrivalDateTime: new Date('2024-02-15T14:00:00Z'),
-                transitTime: '14D',
+                id: 'transport-schedule-001',
+                pol: 'USLAX',
+                pod: 'NLRTM',
+                effectiveFrom: new Date('2024-02-01T10:00:00Z'),
+                effectiveTo: new Date('2024-02-15T14:00:00Z'),
                 transportLegs: {
                   create: [
                     {
-                      departureDateTime: new Date('2024-02-01T10:00:00Z'),
-                      arrivalDateTime: new Date('2024-02-15T14:00:00Z'),
+                      id: 'transport-leg-001',
+                      legSequence: 1,
+                      transportMode: 'OCE',
+                      fromLocation: 'USLAX',
+                      toLocation: 'NLRTM',
+                      estimatedDuration: 14,
                       transports: {
                         create: [
-                                                     {
-                             vesselImoNumber: 9456783,
-                             carrierVesselCode: 'MAE',
-                             vesselName: 'MAERSK SEVILLE',
-                            transportMode: 'VSL',
-                            carrierTradeLaneName: 'Transpacific',
-                            carrierDepartureVoyageNumber: '001E',
-                            inducementLinkFlag: 'N',
-                            carrierServiceCode: 'TP1',
-                            carrierServiceName: 'Transpacific Service',
-                            linkDirection: 'EAST',
-                            carrierCode: 'MAEU',
-                            routingType: 'D'
+                          {
+                            id: 'transport-seed-001',
+                            vesselId: 9456783,
+                            departureTime: new Date('2024-02-05T12:00:00Z'),
+                            arrivalTime: new Date('2024-02-15T14:00:00Z'),
+                            status: 'SCHEDULED',
+                            transportModeId: 'OCE'
                           }
                         ]
                       }
@@ -196,38 +195,37 @@ export async function POST() {
       }),
       prisma.oceanProduct.create({
         data: {
-          vesselOperatorCarrierCode: 'MAEU',
-          carrierProductId: 'TP2',
-          carrierProductSequenceId: '002',
-          productValidFromDate: new Date('2024-01-01'),
-          productValidToDate: new Date('2024-12-31'),
-          numberofproductlinks: '2',
+          id: 'ocean-product-002',
+          carrierCode: 'MAEU',
+          productName: 'TP2',
+          productType: 'OCEAN',
+          description: 'Transpacific Service 2',
           transportSchedules: {
             create: [
               {
-                departureDateTime: new Date('2024-02-05T12:00:00Z'),
-                arrivalDateTime: new Date('2024-02-20T16:00:00Z'),
-                transitTime: '15D',
+                id: 'transport-schedule-002',
+                pol: 'USLAX',
+                pod: 'NLRTM',
+                effectiveFrom: new Date('2024-02-05T12:00:00Z'),
+                effectiveTo: new Date('2024-02-20T16:00:00Z'),
                 transportLegs: {
                   create: [
                     {
-                      departureDateTime: new Date('2024-02-05T12:00:00Z'),
-                      arrivalDateTime: new Date('2024-02-20T16:00:00Z'),
+                      id: 'transport-leg-002',
+                      legSequence: 1,
+                      transportMode: 'OCE',
+                      fromLocation: 'USLAX',
+                      toLocation: 'NLRTM',
+                      estimatedDuration: 15,
                       transports: {
                         create: [
-                                                     {
-                             vesselImoNumber: 9456784,
-                             carrierVesselCode: 'MAE',
-                             vesselName: 'MAERSK SEALAND',
-                            transportMode: 'VSL',
-                            carrierTradeLaneName: 'Transpacific',
-                            carrierDepartureVoyageNumber: '002E',
-                            inducementLinkFlag: 'N',
-                            carrierServiceCode: 'TP2',
-                            carrierServiceName: 'Transpacific Service 2',
-                            linkDirection: 'EAST',
-                            carrierCode: 'MAEU',
-                            routingType: 'D'
+                          {
+                            id: 'transport-seed-002',
+                            vesselId: 9456784,
+                            departureTime: new Date('2024-02-05T12:00:00Z'),
+                            arrivalTime: new Date('2024-02-20T16:00:00Z'),
+                            status: 'SCHEDULED',
+                            transportModeId: 'OCE'
                           }
                         ]
                       }
@@ -247,19 +245,26 @@ export async function POST() {
     const shipmentDeadlines = await Promise.all([
       prisma.shipmentDeadline.create({
         data: {
-          vesselImoNumber: 9456783,
-          voyage: '001E',
-          portOfLoad: 'Los Angeles',
-          isoCountryCode: 'US',
+          id: 'shipment-deadline-001',
+          vesselId: 9456783,
+          transportId: 'transport-001',
+          deadlineType: 'CUTOFF',
+          deadlineDateTime: new Date('2024-01-30T16:30:00Z'),
+          location: 'USLAX',
+          description: 'Voyage 001E from Los Angeles',
           deadlines: {
             create: [
               {
-                deadlineName: 'Commercial Cargo Cutoff',
-                deadlineLocal: new Date('2024-01-30T16:30:00Z')
+                id: 'deadline-seed-001',
+                deadlineType: 'COMMERCIAL_CUTOFF',
+                deadlineDateTime: new Date('2024-01-30T16:30:00Z'),
+                description: 'Commercial Cargo Cutoff'
               },
               {
-                deadlineName: 'VGM Cutoff',
-                deadlineLocal: new Date('2024-01-31T12:00:00Z')
+                id: 'deadline-seed-002',
+                deadlineType: 'VGM_CUTOFF',
+                deadlineDateTime: new Date('2024-01-31T12:00:00Z'),
+                description: 'VGM Cutoff'
               }
             ]
           }
@@ -267,19 +272,26 @@ export async function POST() {
       }),
       prisma.shipmentDeadline.create({
         data: {
-          vesselImoNumber: 9456784,
-          voyage: '002E',
-          portOfLoad: 'Los Angeles',
-          isoCountryCode: 'US',
+          id: 'shipment-deadline-002',
+          vesselId: 9456784,
+          transportId: 'transport-002',
+          deadlineType: 'CUTOFF',
+          deadlineDateTime: new Date('2024-02-03T16:30:00Z'),
+          location: 'USLAX',
+          description: 'Voyage 002E from Los Angeles',
           deadlines: {
             create: [
               {
-                deadlineName: 'Commercial Cargo Cutoff',
-                deadlineLocal: new Date('2024-02-03T16:30:00Z')
+                id: 'deadline-seed-003',
+                deadlineType: 'COMMERCIAL_CUTOFF',
+                deadlineDateTime: new Date('2024-02-03T16:30:00Z'),
+                description: 'Commercial Cargo Cutoff'
               },
               {
-                deadlineName: 'VGM Cutoff',
-                deadlineLocal: new Date('2024-02-04T12:00:00Z')
+                id: 'deadline-seed-004',
+                deadlineType: 'VGM_CUTOFF',
+                deadlineDateTime: new Date('2024-02-04T12:00:00Z'),
+                description: 'VGM Cutoff'
               }
             ]
           }

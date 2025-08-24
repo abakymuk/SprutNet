@@ -78,6 +78,12 @@ jobs:
       - name: Lint
         run: pnpm lint
         
+      - name: Generate Prisma Client
+        run: |
+          echo "🔧 Generating Prisma client..."
+          cd apps/web
+          npx prisma generate
+        
       - name: Type check
         run: pnpm type-check
         
