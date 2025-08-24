@@ -2,18 +2,5 @@
   "buildCommand": "pnpm build",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
-  "installCommand": "pnpm install",
-  "functions": {
-    "apps/web/src/app/api/**/*.ts": {
-      "runtime": "nodejs20.x"
-    }
-  },
-  "env": {
-    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
-    "MAERSK_API_KEY": "@maersk_api_key",
-    "MAERSK_API_SECRET": "@maersk_api_secret",
-    "MAERSK_API_BASE_URL": "@maersk_api_base_url",
-    "DATABASE_URL": "@database_url"
-  }
+  "installCommand": "pnpm install"
 }
