@@ -260,16 +260,27 @@ export function SailingResults({
   // Determine best sailings for highlighting
   const earliestSailing = filteredSailings[0];
   const shortestSailing = [...filteredSailings].sort(
-    (a, b) => new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime()
+    (a, b) => a.route.duration - b.route.duration
   )[0];
   const cheapestSailing = [...filteredSailings].sort(
-    (a, b) => (new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime())
+    (a, b) => (a.rates[0]?.totalCost || 0) - (b.rates[0]?.totalCost || 0)
   )[0];
-  const bestSailing = [...filteredSailings].sort(
-    (a, b) => (new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime())
+  const bestSailing = [...filteredSailings].sort((a, b) => {
+    const aScore = a.route.duration * 0.6 + (a.rates[0]?.totalCost || 0) * 0.4;
+    const bScore = b.route.duration * 0.6 + (b.rates[0]?.totalCost || 0) * 0.4;
+    return aScore - bScore;
+  })[0];
+  const popularSailing = [...filteredSailings].sort(
+    (a, b) => b.vessel.capacity - a.vessel.capacity
   )[0];
 
-  const getSailingBadge = (sailing: Sailing): { label?: string; icon: React.ElementType; variant: "default" | "secondary" | "outline" } | null => {
+  const getSailingBadge = (
+    sailing: Sailing
+  ): {
+    label?: string;
+    icon: React.ElementType;
+    variant: "default" | "secondary" | "outline";
+  } | null => {
     if (sailing.id === earliestSailing?.id && sortBy === "earliest") {
       return {
         label: "Самый ранний",
@@ -287,7 +298,7 @@ export function SailingResults({
     if (sailing.id === cheapestSailing?.id && sortBy === "cheapest") {
       return {
         label: "Самый быстрый",
-        icon: Zap,              
+        icon: Zap,
         variant: "default" as const,
       };
     }
@@ -485,11 +496,13 @@ export function SailingResults({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <FallbackButton
-              dataSource={dataSource}
-              onSwitchToMock={onSwitchToMock}
-              error={error}
-            />
+            {onSwitchToMock && (
+              <FallbackButton
+                dataSource={dataSource}
+                onSwitchToMock={onSwitchToMock}
+                error={error}
+              />
+            )}
           </div>
         </div>
 
@@ -661,7 +674,7 @@ export function SailingResults({
                             <Ship className="h-5 w-5 text-primary" />
                             {sailing.carrierName} - {sailing.voyageNumber}
                           </CardTitle>
-                          <VesselCard imo={sailing.vessel.imo}>
+                          <VesselCard imo={sailing.vessel.imoNumber}>
                             <Button
                               variant="ghost"
                               size="sm"
