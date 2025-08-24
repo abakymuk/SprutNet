@@ -18,6 +18,8 @@ postgresql://postgres:Gariba1ddi@db.kzbtwgpedbojxnfiprsw.supabase.co:5432/postgr
 5. **Value:** `postgresql://postgres:Gariba1ddi@db.kzbtwgpedbojxnfiprsw.supabase.co:5432/postgres`
 6. Нажмите **Add secret**
 
+**⚠️ ВАЖНО:** После добавления DATABASE_URL в GitHub Secrets, нужно будет обновить workflow файлы, чтобы использовать `${{ secrets.DATABASE_URL }}` вместо прямого значения.
+
 ### 2. Существующие Secrets (проверить наличие)
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
@@ -32,6 +34,11 @@ postgresql://postgres:Gariba1ddi@db.kzbtwgpedbojxnfiprsw.supabase.co:5432/postgr
 2. **Prisma команды будут работать корректно**
 3. **Database migrations будут выполняться**
 4. **API тестирование пройдет успешно**
+
+## 🔧 Текущий статус
+
+**✅ ВРЕМЕННОЕ РЕШЕНИЕ:** DATABASE_URL добавлен прямо в workflow файлы для тестирования.
+**🔄 СЛЕДУЮЩИЙ ШАГ:** Добавить DATABASE_URL в GitHub Secrets и обновить workflow файлы для безопасности.
 
 ## 📊 Ожидаемый результат
 
