@@ -105,11 +105,15 @@ Thumbs.db
 # Vercel
 .vercel
 
-# Vercel
-.vercel
-
 # Supabase
 .supabase/
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local
 
 # Testing
 coverage/

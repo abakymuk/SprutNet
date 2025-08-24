@@ -116,7 +116,7 @@ pnpm lint
 - **Staging**: https://sprutnet-staging.vercel.app (develop branch)
 - **Production**: https://sprutnet.vercel.app (main branch)
 
-Подробная инструкция: [CI/CD Setup Guide](.github/CICD_SETUP.md)
+Подробная инструкция: [CI/CD Pipeline Documentation](docs/CICD_PIPELINE.md)
 
 ### Структура тикетов
 
