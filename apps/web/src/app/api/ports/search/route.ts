@@ -1,22 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchDeadlines, getDeadlineById, getDeadlinesBySailing, getDeadlinesByPort, getDeadlinesByType } from '@sprutnet/shared/mocks';
-import type { DeadlineSearchQuery, DeadlineSearchResult } from '@sprutnet/shared/types';
+import { searchPorts, getPortsByCountry } from '@sprutnet/shared/mocks';
+import type { PortSearchQuery, PortSearchResult } from '@sprutnet/shared/types';
 
 /**
- * GET /api/deadlines
- * Поиск дедлайнов с поддержкой фильтрации
+ * GET /api/ports/search
+ * Поиск портов с поддержкой фильтрации
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
     // Парсим параметры запроса
-    const sailingId = searchParams.get('sailingId') || undefined;
-    const portId = searchParams.get('portId') || undefined;
+    const query = searchParams.get('query') || '';
+    const countryCode = searchParams.get('countryCode') || undefined;
     const type = searchParams.get('type') as any || undefined;
-    const deadlineDateFrom = searchParams.get('deadlineDateFrom') ? new Date(searchParams.get('deadlineDateFrom')!) : undefined;
-    const deadlineDateTo = searchParams.get('deadlineDateTo') ? new Date(searchParams.get('deadlineDateTo')!) : undefined;
-    const status = searchParams.get('status') as any || undefined;
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = parseInt(searchParams.get('offset') || '0');
     
@@ -25,21 +22,19 @@ export async function GET(request: NextRequest) {
     
     if (useMocks) {
       // Используем моковые данные
-      const results = searchDeadlines(
-        sailingId,
-        portId,
-        type,
-        deadlineDateFrom,
-        deadlineDateTo,
-        status,
-        limit + offset
-      );
+      let results;
+      
+      if (countryCode) {
+        results = getPortsByCountry(countryCode);
+      } else {
+        results = searchPorts(query, limit + offset);
+      }
       
       // Применяем пагинацию
       const paginatedResults = results.slice(offset, offset + limit);
       
-      const response: DeadlineSearchResult = {
-        deadlines: paginatedResults,
+      const response: PortSearchResult = {
+        ports: paginatedResults,
         total: results.length,
         offset,
         limit,
@@ -55,7 +50,7 @@ export async function GET(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('Error in deadlines API:', error);
+    console.error('Error in ports search API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -64,44 +59,33 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/deadlines
- * Поиск дедлайнов с JSON body
+ * POST /api/ports/search
+ * Поиск портов с JSON body
  */
 export async function POST(request: NextRequest) {
   try {
-    const body: DeadlineSearchQuery = await request.json();
+    const body: PortSearchQuery = await request.json();
     
-    const { 
-      sailingId, 
-      portId, 
-      type, 
-      deadlineDateFrom, 
-      deadlineDateTo, 
-      status, 
-      limit = 10, 
-      offset = 0 
-    } = body;
+    const { query, countryCode, type, limit = 10, offset = 0 } = body;
     
     // Проверяем флаг для использования моков
     const useMocks = process.env.FEATURE_MAERSK !== 'true';
     
     if (useMocks) {
       // Используем моковые данные
-      const results = searchDeadlines(
-        sailingId,
-        portId,
-        type,
-        deadlineDateFrom,
-        deadlineDateTo,
-        status,
-        limit + offset
-      );
+      let results;
+      
+      if (countryCode) {
+        results = getPortsByCountry(countryCode);
+      } else {
+        results = searchPorts(query, limit + offset);
+      }
       
       // Применяем пагинацию
       const paginatedResults = results.slice(offset, offset + limit);
       
-      const response: DeadlineSearchResult = {
-        deadlines: paginatedResults,
+      const response: PortSearchResult = {
+        ports: paginatedResults,
         total: results.length,
         offset,
         limit,
@@ -117,7 +101,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('Error in deadlines API:', error);
+    console.error('Error in ports search API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

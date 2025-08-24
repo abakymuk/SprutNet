@@ -1,45 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchDeadlines, getDeadlineById, getDeadlinesBySailing, getDeadlinesByPort, getDeadlinesByType } from '@sprutnet/shared/mocks';
-import type { DeadlineSearchQuery, DeadlineSearchResult } from '@sprutnet/shared/types';
+import { searchSailings, getSailingById, getSailingsByCarrier } from '@sprutnet/shared/mocks';
+import type { SailingSearchQuery, SailingSearchResult } from '@sprutnet/shared/types';
 
 /**
- * GET /api/deadlines
- * Поиск дедлайнов с поддержкой фильтрации
+ * GET /api/schedules
+ * Поиск расписаний рейсов с поддержкой фильтрации
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     
     // Парсим параметры запроса
-    const sailingId = searchParams.get('sailingId') || undefined;
-    const portId = searchParams.get('portId') || undefined;
-    const type = searchParams.get('type') as any || undefined;
-    const deadlineDateFrom = searchParams.get('deadlineDateFrom') ? new Date(searchParams.get('deadlineDateFrom')!) : undefined;
-    const deadlineDateTo = searchParams.get('deadlineDateTo') ? new Date(searchParams.get('deadlineDateTo')!) : undefined;
-    const status = searchParams.get('status') as any || undefined;
+    const originPortId = searchParams.get('originPortId');
+    const destinationPortId = searchParams.get('destinationPortId');
+    const departureDateFrom = searchParams.get('departureDateFrom') ? new Date(searchParams.get('departureDateFrom')!) : undefined;
+    const departureDateTo = searchParams.get('departureDateTo') ? new Date(searchParams.get('departureDateTo')!) : undefined;
+    const carrierCode = searchParams.get('carrierCode') || undefined;
+    const containerType = searchParams.get('containerType') as any || undefined;
     const limit = parseInt(searchParams.get('limit') || '10');
     const offset = parseInt(searchParams.get('offset') || '0');
+    
+    // Валидация обязательных параметров
+    if (!originPortId || !destinationPortId) {
+      return NextResponse.json(
+        { error: 'originPortId and destinationPortId are required' },
+        { status: 400 }
+      );
+    }
     
     // Проверяем флаг для использования моков
     const useMocks = process.env.FEATURE_MAERSK !== 'true';
     
     if (useMocks) {
       // Используем моковые данные
-      const results = searchDeadlines(
-        sailingId,
-        portId,
-        type,
-        deadlineDateFrom,
-        deadlineDateTo,
-        status,
+      const results = searchSailings(
+        originPortId,
+        destinationPortId,
+        departureDateFrom,
+        departureDateTo,
+        carrierCode,
+        containerType,
         limit + offset
       );
       
       // Применяем пагинацию
       const paginatedResults = results.slice(offset, offset + limit);
       
-      const response: DeadlineSearchResult = {
-        deadlines: paginatedResults,
+      const response: SailingSearchResult = {
+        sailings: paginatedResults,
         total: results.length,
         offset,
         limit,
@@ -55,7 +63,7 @@ export async function GET(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('Error in deadlines API:', error);
+    console.error('Error in schedules API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -64,44 +72,52 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/deadlines
- * Поиск дедлайнов с JSON body
+ * POST /api/schedules
+ * Поиск расписаний с JSON body
  */
 export async function POST(request: NextRequest) {
   try {
-    const body: DeadlineSearchQuery = await request.json();
+    const body: SailingSearchQuery = await request.json();
     
     const { 
-      sailingId, 
-      portId, 
-      type, 
-      deadlineDateFrom, 
-      deadlineDateTo, 
-      status, 
+      originPortId, 
+      destinationPortId, 
+      departureDateFrom, 
+      departureDateTo, 
+      carrierCode, 
+      containerType, 
       limit = 10, 
       offset = 0 
     } = body;
+    
+    // Валидация обязательных параметров
+    if (!originPortId || !destinationPortId) {
+      return NextResponse.json(
+        { error: 'originPortId and destinationPortId are required' },
+        { status: 400 }
+      );
+    }
     
     // Проверяем флаг для использования моков
     const useMocks = process.env.FEATURE_MAERSK !== 'true';
     
     if (useMocks) {
       // Используем моковые данные
-      const results = searchDeadlines(
-        sailingId,
-        portId,
-        type,
-        deadlineDateFrom,
-        deadlineDateTo,
-        status,
+      const results = searchSailings(
+        originPortId,
+        destinationPortId,
+        departureDateFrom,
+        departureDateTo,
+        carrierCode,
+        containerType,
         limit + offset
       );
       
       // Применяем пагинацию
       const paginatedResults = results.slice(offset, offset + limit);
       
-      const response: DeadlineSearchResult = {
-        deadlines: paginatedResults,
+      const response: SailingSearchResult = {
+        sailings: paginatedResults,
         total: results.length,
         offset,
         limit,
@@ -117,7 +133,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('Error in deadlines API:', error);
+    console.error('Error in schedules API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
