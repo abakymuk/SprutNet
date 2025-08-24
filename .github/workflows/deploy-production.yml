@@ -62,7 +62,7 @@ jobs:
           pnpm list @prisma/client
           echo "🔧 Generating Prisma client in root..."
           pnpm exec prisma generate --schema=prisma/schema.prisma
-          echo "🔧 Generating Prisma client in apps/web..."
+          echo "🔧 Generating Prisma client for apps/web..."
           cd apps/web
           pnpm exec prisma generate --schema=../../prisma/schema.prisma
           cd ../..
