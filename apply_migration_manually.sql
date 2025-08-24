@@ -1,13 +1,9 @@
 -- ========================================
--- ALIGN WITH OFFICIAL MAERSK API SPECIFICATIONS
--- Based on official OpenAPI specs:
--- - deadlines_v2-1_08082024_scalar_spec.yaml
--- - locations_v4_21062921_scalar_specs.yaml
--- - p2p_schedules_v2-2_13082024_scalar_spec.yaml
--- - vessels_v3-0-2_11082023_scalar_spec.yaml
+-- MANUAL MIGRATION FOR SUPABASE DASHBOARD
+-- Apply this SQL in Supabase Dashboard > SQL Editor
 -- ========================================
 
--- Drop existing tables to recreate with correct structure
+-- First, drop all existing tables to start fresh
 DROP TABLE IF EXISTS deadlines CASCADE;
 DROP TABLE IF EXISTS un_location_codes CASCADE;
 DROP TABLE IF EXISTS transport_legs CASCADE;

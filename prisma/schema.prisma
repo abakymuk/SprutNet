@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,284 +7,247 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ========================================
-// REFERENCE MODELS (from official specs)
-// ========================================
-
 model Country {
-  id          String   @id @map("country_code") @db.VarChar(2)
-  countryName String   @map("country_name") @db.VarChar(100)
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  // Relations
-  vessels     Vessel[]
-  locations   Location[]
+  id                String             @id @map("country_code") @db.VarChar(2)
+  countryName       String             @map("country_name") @db.VarChar(100)
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  locations         Location[]
   shipmentDeadlines ShipmentDeadline[]
+  vessels           Vessel[]
 
   @@map("countries")
 }
 
 model CarrierCode {
-  id          String   @id @map("carrier_code") @db.VarChar(4)
-  carrierName String   @map("carrier_name") @db.VarChar(100)
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  // Relations
+  id            String         @id @map("carrier_code") @db.VarChar(4)
+  carrierName   String         @map("carrier_name") @db.VarChar(100)
+  description   String?
+  createdAt     DateTime?      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime?      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   oceanProducts OceanProduct[]
 
   @@map("carrier_codes")
 }
 
 model TransportMode {
-  id          String   @id @map("mode_code") @db.VarChar(3)
-  modeName    String   @map("mode_name") @db.VarChar(50)
+  id          String      @id @map("mode_code") @db.VarChar(3)
+  modeName    String      @map("mode_name") @db.VarChar(50)
   description String?
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  // Relations
-  transports Transport[]
+  createdAt   DateTime?   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime?   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transports  Transport[]
 
   @@map("transport_modes")
 }
 
 model LocationType {
-  id          String   @id @map("type_code") @db.VarChar(50)
-  typeName    String   @map("type_name") @db.VarChar(50)
+  id          String     @id @map("type_code") @db.VarChar(50)
+  typeName    String     @map("type_name") @db.VarChar(50)
   description String?
-  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  // Relations
-  locations Location[]
+  createdAt   DateTime?  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime?  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  locations   Location[]
 
   @@map("location_types")
 }
 
-// ========================================
-// VESSELS API (v3.0.2) - Official Structure
-// ========================================
-
 model Vessel {
-  id                Int      @id @map("vessel_imo_number") // Changed to INTEGER per official spec
-  carrierVesselCode String   @map("carrier_vessel_code") @db.VarChar(3)
-  vesselShortName   String?  @map("vessel_short_name") @db.VarChar(18)
-  vesselLongName    String?  @map("vessel_long_name") @db.VarChar(35)
-  vesselFlagCode    String?  @map("vessel_flag_code") @db.VarChar(2)
-  vesselBuiltYear   Int?
-  vesselCallSign    String?  @map("vessel_call_sign") @db.VarChar(10)
-  vesselCapacityTeu Int?     @map("vessel_capacity_teu")
-  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  // Relations
-  country       Country?        @relation(fields: [vesselFlagCode], references: [id])
-  transports    Transport[]
+  id                Int                @id @map("vessel_imo_number")
+  carrierVesselCode String             @map("carrier_vessel_code") @db.VarChar(3)
+  vesselShortName   String?            @map("vessel_short_name") @db.VarChar(18)
+  vesselLongName    String?            @map("vessel_long_name") @db.VarChar(35)
+  vesselFlagCode    String?            @map("vessel_flag_code") @db.VarChar(2)
+  vessel_built_year Int?
+  vesselCallSign    String?            @map("vessel_call_sign") @db.VarChar(10)
+  vesselCapacityTeu Int?               @map("vessel_capacity_teu")
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
   shipmentDeadlines ShipmentDeadline[]
+  transports        Transport[]
+  country           Country?           @relation(fields: [vesselFlagCode], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+  @@index([carrierVesselCode], map: "idx_vessels_carrier_code")
+  @@index([id], map: "idx_vessels_imo_number")
   @@map("vessels")
 }
 
-// ========================================
-// LOCATIONS API (v4.0.0) - Official Structure
-// ========================================
-
 model Location {
-  id                   String    @id @map("carrier_geo_id") @db.VarChar(13)
-  countryCode          String?   @map("country_code") @db.VarChar(2)
-  countryName          String?   @map("country_name") @db.VarChar(100)
-  unLocationCode       String?   @map("un_location_code") @db.VarChar(5)
-  cityName             String?   @map("city_name") @db.VarChar(100)
-  unRegionCode         String?   @map("un_region_code") @db.VarChar(3)
-  unRegionName         String?   @map("un_region_name") @db.VarChar(100)
-  locationType         String?   @map("location_type") @db.VarChar(50)
-  locationName         String?   @map("location_name") @db.VarChar(100)
-  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id              String           @id @map("carrier_geo_id") @db.VarChar(13)
+  countryCode     String?          @map("country_code") @db.VarChar(2)
+  countryName     String?          @map("country_name") @db.VarChar(100)
+  unLocationCode  String?          @map("un_location_code") @db.VarChar(5)
+  cityName        String?          @map("city_name") @db.VarChar(100)
+  unRegionCode    String?          @map("un_region_code") @db.VarChar(3)
+  unRegionName    String?          @map("un_region_name") @db.VarChar(100)
+  locationType    String?          @map("location_type") @db.VarChar(50)
+  locationName    String?          @map("location_name") @db.VarChar(100)
+  createdAt       DateTime?        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime?        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  carrierLocation CarrierLocation?
+  country         Country?         @relation(fields: [countryCode], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  locationTypeRef LocationType?    @relation(fields: [locationType], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  // Relations
-  country              Country?              @relation(fields: [countryCode], references: [id])
-  locationTypeRef      LocationType?         @relation(fields: [locationType], references: [id])
-  carrierLocation      CarrierLocation?
-
+  @@index([id], map: "idx_locations_carrier_geo_id")
+  @@index([cityName], map: "idx_locations_city_name")
+  @@index([countryCode], map: "idx_locations_country_code")
   @@map("locations")
 }
 
 model CarrierLocation {
-  id                    String    @id @map("carrier_geo_id") @db.VarChar(13)
-  carrierRktsCode       String?   @map("carrier_rkts_code") @db.VarChar(10)
-  carrierRkstCode       String?   @map("carrier_rkst_code") @db.VarChar(10)
-  timeZoneId            String?   @map("time_zone_id") @db.VarChar(50)
-  carrierCountryGeoId   String?   @map("carrier_country_geo_id") @db.VarChar(13)
-  alternateAliases      String[]  @map("alternate_aliases")
-  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  // Relations
-  location Location @relation(fields: [id], references: [id])
+  id                  String    @id @map("carrier_geo_id") @db.VarChar(13)
+  carrierRktsCode     String?   @map("carrier_rkts_code") @db.VarChar(10)
+  carrierRkstCode     String?   @map("carrier_rkst_code") @db.VarChar(10)
+  timeZoneId          String?   @map("time_zone_id") @db.VarChar(50)
+  carrierCountryGeoId String?   @map("carrier_country_geo_id") @db.VarChar(13)
+  alternateAliases    String[]  @map("alternate_aliases")
+  createdAt           DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  location            Location  @relation(fields: [id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("carrier_locations")
 }
 
-// ========================================
-// P2P SCHEDULES API (v2.2.0) - Official Structure
-// ========================================
-
 model OceanProduct {
-  id                           String    @id @default(uuid()) @map("id") @db.Uuid
-  vesselOperatorCarrierCode    String?   @map("vessel_operator_carrier_code") @db.VarChar(4)
-  carrierProductId             String?   @map("carrier_product_id") @db.VarChar(50)
-  carrierProductSequenceId     String?   @map("carrier_product_sequence_id") @db.VarChar(50)
-  productValidFromDate         DateTime? @map("product_valid_from_date") @db.Date
-  productValidToDate           DateTime? @map("product_valid_to_date") @db.Date
-  numberOfProductLinks         String?   @map("numberOfProductLinks") @db.VarChar(10)
-  createdAt                    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                        String              @id @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  vesselOperatorCarrierCode String?             @map("vessel_operator_carrier_code") @db.VarChar(4)
+  carrierProductId          String?             @map("carrier_product_id") @db.VarChar(50)
+  carrierProductSequenceId  String?             @map("carrier_product_sequence_id") @db.VarChar(50)
+  productValidFromDate      DateTime?           @map("product_valid_from_date") @db.Date
+  productValidToDate        DateTime?           @map("product_valid_to_date") @db.Date
+  numberofproductlinks      String?             @db.VarChar(10)
+  createdAt                 DateTime?           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime?           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  carrierCode               CarrierCode?        @relation(fields: [vesselOperatorCarrierCode], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  transportSchedules        TransportSchedule[]
 
-  // Relations
-  carrierCode      CarrierCode?     @relation(fields: [vesselOperatorCarrierCode], references: [id])
-  transportSchedules TransportSchedule[]
-
+  @@index([vesselOperatorCarrierCode], map: "idx_ocean_products_carrier_code")
+  @@index([productValidFromDate, productValidToDate], map: "idx_ocean_products_valid_dates")
   @@map("ocean_products")
 }
 
 model TransportSchedule {
-  id                String    @id @default(uuid()) @map("id") @db.Uuid
-  oceanProductId    String    @map("ocean_product_id") @db.Uuid
-  departureDateTime DateTime? @map("departure_date_time") @db.Timestamptz(6)
-  arrivalDateTime   DateTime? @map("arrival_date_time") @db.Timestamptz(6)
-  transitTime       String?   @map("transit_time") @db.VarChar(10)
-  createdAt         DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  oceanProductId    String?        @map("ocean_product_id") @db.Uuid
+  departureDateTime DateTime?      @map("departure_date_time") @db.Timestamptz(6)
+  arrivalDateTime   DateTime?      @map("arrival_date_time") @db.Timestamptz(6)
+  transitTime       String?        @map("transit_time") @db.VarChar(10)
+  createdAt         DateTime?      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transportLegs     TransportLeg[]
+  oceanProduct      OceanProduct?  @relation(fields: [oceanProductId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  // Relations
-  oceanProduct   OceanProduct    @relation(fields: [oceanProductId], references: [id], onDelete: Cascade)
-  transportLegs  TransportLeg[]
-
+  @@index([departureDateTime, arrivalDateTime], map: "idx_transport_schedules_dates")
+  @@index([oceanProductId], map: "idx_transport_schedules_ocean_product_id")
   @@map("transport_schedules")
 }
 
 model TransportLeg {
-  id                        String    @id @default(uuid()) @map("id") @db.Uuid
-  transportScheduleId       String    @map("transport_schedule_id") @db.Uuid
-  departureDateTime         DateTime? @map("departure_date_time") @db.Timestamptz(6)
-  arrivalDateTime           DateTime? @map("arrival_date_time") @db.Timestamptz(6)
-  createdAt                 DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                 DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                  String             @id @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  transportScheduleId String?            @map("transport_schedule_id") @db.Uuid
+  departureDateTime   DateTime?          @map("departure_date_time") @db.Timestamptz(6)
+  arrivalDateTime     DateTime?          @map("arrival_date_time") @db.Timestamptz(6)
+  createdAt           DateTime?          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  facilities          Facility[]
+  transportSchedule   TransportSchedule? @relation(fields: [transportScheduleId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  transports          Transport[]
 
-  // Relations
-  transportSchedule TransportSchedule @relation(fields: [transportScheduleId], references: [id], onDelete: Cascade)
-  transports        Transport[]
-  facilities        Facility[]
-
+  @@index([transportScheduleId], map: "idx_transport_legs_schedule_id")
   @@map("transport_legs")
 }
 
 model Transport {
-  id                           String    @id @default(uuid()) @map("id") @db.Uuid
-  transportLegId               String    @map("transport_leg_id") @db.Uuid
-  vesselImoNumber              Int?      @map("vessel_imo_number")
-  carrierVesselCode            String?   @map("carrier_vessel_code") @db.VarChar(3)
-  vesselName                   String?   @map("vessel_name") @db.VarChar(35)
-  transportMode                String?   @map("transport_mode") @db.VarChar(3)
-  carrierTradeLaneName         String?   @map("carrier_trade_lane_name") @db.VarChar(100)
-  carrierDepartureVoyageNumber String?   @map("carrier_departure_voyage_number") @db.VarChar(4)
-  inducementLinkFlag           String?   @map("inducement_link_flag") @db.VarChar(1)
-  carrierServiceCode           String?   @map("carrier_service_code") @db.VarChar(3)
-  carrierServiceName           String?   @map("carrier_service_name") @db.VarChar(100)
-  linkDirection                String?   @map("link_direction") @db.VarChar(10)
-  carrierCode                  String?   @map("carrier_code") @db.VarChar(10)
-  routingType                  String?   @map("routing_type") @db.VarChar(1)
-  createdAt                    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                           String         @id @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  transportLegId               String?        @map("transport_leg_id") @db.Uuid
+  vesselImoNumber              Int?           @map("vessel_imo_number")
+  carrierVesselCode            String?        @map("carrier_vessel_code") @db.VarChar(3)
+  vesselName                   String?        @map("vessel_name") @db.VarChar(35)
+  transportMode                String?        @map("transport_mode") @db.VarChar(3)
+  carrierTradeLaneName         String?        @map("carrier_trade_lane_name") @db.VarChar(100)
+  carrierDepartureVoyageNumber String?        @map("carrier_departure_voyage_number") @db.VarChar(4)
+  inducementLinkFlag           String?        @map("inducement_link_flag") @db.VarChar(1)
+  carrierServiceCode           String?        @map("carrier_service_code") @db.VarChar(3)
+  carrierServiceName           String?        @map("carrier_service_name") @db.VarChar(100)
+  linkDirection                String?        @map("link_direction") @db.VarChar(10)
+  carrierCode                  String?        @map("carrier_code") @db.VarChar(10)
+  routingType                  String?        @map("routing_type") @db.VarChar(1)
+  createdAt                    DateTime?      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                    DateTime?      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transportLeg                 TransportLeg?  @relation(fields: [transportLegId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  transportModeRef             TransportMode? @relation(fields: [transportMode], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vessel                       Vessel?        @relation(fields: [vesselImoNumber], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  // Relations
-  transportLeg   TransportLeg  @relation(fields: [transportLegId], references: [id], onDelete: Cascade)
-  vessel         Vessel?       @relation(fields: [vesselImoNumber], references: [id])
-  transportModeRef TransportMode? @relation(fields: [transportMode], references: [id])
-
+  @@index([transportLegId], map: "idx_transports_leg_id")
+  @@index([vesselImoNumber], map: "idx_transports_vessel_imo")
   @@map("transports")
 }
 
 model Facility {
-  id                    String   @id @default(uuid()) @map("id") @db.Uuid
-  transportLegId        String   @map("transport_leg_id") @db.Uuid
-  carrierSiteGeoId      String?  @map("carrier_site_geo_id") @db.VarChar(13)
-  locationType          String?  @map("location_type") @db.VarChar(50)
-  locationName          String?  @map("location_name") @db.VarChar(100)
-  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  transportLegId   String?          @map("transport_leg_id") @db.Uuid
+  carrierSiteGeoId String?          @map("carrier_site_geo_id") @db.VarChar(13)
+  locationType     String?          @map("location_type") @db.VarChar(50)
+  locationName     String?          @map("location_name") @db.VarChar(100)
+  createdAt        DateTime?        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime?        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transportLeg     TransportLeg?    @relation(fields: [transportLegId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  unLocationCodes  UnLocationCode[]
 
-  // Relations
-  transportLeg      TransportLeg     @relation(fields: [transportLegId], references: [id], onDelete: Cascade)
-  unLocationCodes   UnLocationCode[]
-
+  @@index([transportLegId], map: "idx_facilities_leg_id")
   @@map("facilities")
 }
 
 model UnLocationCode {
-  id                    String   @id @default(uuid()) @map("id") @db.Uuid
-  facilityId            String   @map("facility_id") @db.Uuid
-  unLocationCode        String?  @map("un_location_code") @db.VarChar(5)
-  cityUnLocationCode    String?  @map("city_un_location_code") @db.VarChar(5)
-  siteUnLocationCode    String?  @map("site_un_location_code") @db.VarChar(5)
-  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  // Relations
-  facility Facility @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  facilityId         String?   @map("facility_id") @db.Uuid
+  unLocationCode     String?   @map("un_location_code") @db.VarChar(5)
+  cityUnLocationCode String?   @map("city_un_location_code") @db.VarChar(5)
+  siteUnLocationCode String?   @map("site_un_location_code") @db.VarChar(5)
+  createdAt          DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  facility           Facility? @relation(fields: [facilityId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("un_location_codes")
 }
 
-// ========================================
-// DEADLINES API (v2.1.0) - Official Structure
-// ========================================
-
 model ShipmentDeadline {
-  id              String    @id @default(uuid()) @map("id") @db.Uuid
-  vesselImoNumber Int?      @map("vessel_imo_number")
-  voyage          String?   @map("voyage") @db.VarChar(4)
-  portOfLoad      String?   @map("port_of_load") @db.VarChar(100)
-  isoCountryCode  String?   @map("iso_country_code") @db.VarChar(2)
-  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt       DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  // Relations
-  vessel  Vessel?  @relation(fields: [vesselImoNumber], references: [id])
-  country Country? @relation(fields: [isoCountryCode], references: [id])
+  id                String                   @id @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  vesselImoNumber   Int?                     @map("vessel_imo_number")
+  voyage            String?                  @map("voyage") @db.VarChar(4)
+  portOfLoad        String?                  @map("port_of_load") @db.VarChar(100)
+  isoCountryCode    String?                  @map("iso_country_code") @db.VarChar(2)
+  createdAt         DateTime?                @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?                @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deadlines         Deadline[]
   shipmentDeadlines ShipmentDeadlineDetail[]
+  country           Country?                 @relation(fields: [isoCountryCode], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vessel            Vessel?                  @relation(fields: [vesselImoNumber], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+  @@index([vesselImoNumber], map: "idx_shipment_deadlines_vessel_imo")
   @@map("shipment_deadlines")
 }
 
 model ShipmentDeadlineDetail {
-  id                    String    @id @default(uuid()) @map("id") @db.Uuid
-  shipmentDeadlinesId   String    @map("shipment_deadlines_id") @db.Uuid
-  terminalName          String?   @map("terminal_name") @db.VarChar(100)
-  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  // Relations
-  shipmentDeadlines ShipmentDeadline @relation(fields: [shipmentDeadlinesId], references: [id], onDelete: Cascade)
-  deadlines         Deadline[]
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  shipmentDeadlinesId String?           @map("shipment_deadlines_id") @db.Uuid
+  terminalName        String?           @map("terminal_name") @db.VarChar(100)
+  createdAt           DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  shipmentDeadlines   ShipmentDeadline? @relation(fields: [shipmentDeadlinesId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@map("shipment_deadline")
 }
 
 model Deadline {
-  id                    String    @id @default(uuid()) @map("id") @db.Uuid
-  shipmentDeadlineId    String    @map("shipment_deadline_id") @db.Uuid
-  deadlineName          String?   @map("deadline_name") @db.VarChar(100)
-  deadlineLocal         DateTime? @map("deadline_local") @db.Timestamptz(6)
-  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @map("id") @db.Uuid
+  shipmentDeadlineId String?           @map("shipment_deadline_id") @db.Uuid
+  deadlineName       String?           @map("deadline_name") @db.VarChar(100)
+  deadlineLocal      DateTime?         @map("deadline_local") @db.Timestamptz(6)
+  createdAt          DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  shipmentDeadline   ShipmentDeadline? @relation(fields: [shipmentDeadlineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  // Relations
-  shipmentDeadline ShipmentDeadlineDetail @relation(fields: [shipmentDeadlineId], references: [id], onDelete: Cascade)
-
+  @@index([shipmentDeadlineId], map: "idx_deadlines_shipment_id")
   @@map("deadlines")
 }
