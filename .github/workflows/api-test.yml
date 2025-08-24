@@ -51,10 +51,13 @@ jobs:
           node -e "
           const https = require('node:https');
           
+          const params = new URLSearchParams();
+          params.append('limit', '1');
+          
           const options = {
             hostname: 'api.maersk.com',
             port: 443,
-            path: '/reference-data/vessels?limit=1',
+            path: '/reference-data/vessels?' + params.toString(),
             method: 'GET',
             headers: {
               'Accept': 'application/json',
@@ -113,10 +116,14 @@ jobs:
           node -e "
           const https = require('node:https');
           
+          const locParams = new URLSearchParams();
+          locParams.append('countryCode', 'US');
+          locParams.append('limit', '10');
+          
           const options = {
             hostname: 'api.maersk.com',
             port: 443,
-            path: '/reference-data/locations?countryCode=US&limit=10',
+            path: '/reference-data/locations?' + locParams.toString(),
             method: 'GET',
             headers: {
               'Accept': 'application/json',
@@ -206,7 +213,11 @@ jobs:
               'User-Agent': 'SprutNet/1.0'
             };
             
-            const response = await makeRequest('api.maersk.com', '/reference-data/locations?countryCode=US&cityName=Houston&limit=10', headers);
+            const locParams = new URLSearchParams();
+            locParams.append('countryCode', 'US');
+            locParams.append('cityName', 'Houston');
+            locParams.append('limit', '10');
+            const response = await makeRequest('api.maersk.com', '/reference-data/locations?' + locParams.toString(), headers);
             console.log('📊 Houston Locations API Status:', response.status);
             
             if (response.status === 200) {
@@ -230,7 +241,11 @@ jobs:
               'User-Agent': 'SprutNet/1.0'
             };
             
-            const response = await makeRequest('api.maersk.com', '/reference-data/locations?countryCode=NL&cityName=Rotterdam&limit=10', headers);
+            const locParams = new URLSearchParams();
+            locParams.append('countryCode', 'NL');
+            locParams.append('cityName', 'Rotterdam');
+            locParams.append('limit', '10');
+            const response = await makeRequest('api.maersk.com', '/reference-data/locations?' + locParams.toString(), headers);
             console.log('📊 Rotterdam Locations API Status:', response.status);
             
             if (response.status === 200) {
@@ -253,22 +268,21 @@ jobs:
               const houstonGeoID = await getHoustonGeoID();
               const rotterdamGeoID = await getRotterdamGeoID();
               
-              // Build Ocean Products API request with correct GeoIDs
-              const params = new URLSearchParams({
-                carrierCollectionOriginGeoID: houstonGeoID,
-                carrierDeliveryDestinationGeoID: rotterdamGeoID,
-                vesselOperatorCarrierCode: 'MAEU',
-                cargoType: 'DRY',
-                ISOEquipmentCode: '42G1',
-                stuffingWeight: '18000',
-                weightMeasurementUnit: 'KGS',
-                stuffingVolume: '10',
-                volumeMeasurementUnit: 'MTQ',
-                exportServiceMode: 'CY',
-                importServiceMode: 'CY',
-                startDateType: 'D',
-                dateRange: 'P4W'
-              });
+                             // Build Ocean Products API request with correct GeoIDs
+               const params = new URLSearchParams();
+               params.append('carrierCollectionOriginGeoID', houstonGeoID);
+               params.append('carrierDeliveryDestinationGeoID', rotterdamGeoID);
+               params.append('vesselOperatorCarrierCode', 'MAEU');
+               params.append('cargoType', 'DRY');
+               params.append('ISOEquipmentCode', '42G1');
+               params.append('stuffingWeight', '18000');
+               params.append('weightMeasurementUnit', 'KGS');
+               params.append('stuffingVolume', '10');
+               params.append('volumeMeasurementUnit', 'MTQ');
+               params.append('exportServiceMode', 'CY');
+               params.append('importServiceMode', 'CY');
+               params.append('startDateType', 'D');
+               params.append('dateRange', 'P4W');
               
               const headers = {
                 'Accept': 'application/json',
@@ -290,21 +304,20 @@ jobs:
                  console.log('⚠️ No schedule available for this combination. Trying alternative parameters...');
                  
                  // Try alternative parameters with different date range
-                 const altParams = new URLSearchParams({
-                   carrierCollectionOriginGeoID: houstonGeoID,
-                   carrierDeliveryDestinationGeoID: rotterdamGeoID,
-                   vesselOperatorCarrierCode: 'MAEU',
-                   cargoType: 'DRY',
-                   ISOEquipmentCode: '42G1',
-                   stuffingWeight: '18000',
-                   weightMeasurementUnit: 'KGS',
-                   stuffingVolume: '10',
-                   volumeMeasurementUnit: 'MTQ',
-                   exportServiceMode: 'CY',
-                   importServiceMode: 'CY',
-                   startDateType: 'D',
-                   dateRange: 'P8W'  // Try longer date range
-                 });
+                 const altParams = new URLSearchParams();
+                 altParams.append('carrierCollectionOriginGeoID', houstonGeoID);
+                 altParams.append('carrierDeliveryDestinationGeoID', rotterdamGeoID);
+                 altParams.append('vesselOperatorCarrierCode', 'MAEU');
+                 altParams.append('cargoType', 'DRY');
+                 altParams.append('ISOEquipmentCode', '42G1');
+                 altParams.append('stuffingWeight', '18000');
+                 altParams.append('weightMeasurementUnit', 'KGS');
+                 altParams.append('stuffingVolume', '10');
+                 altParams.append('volumeMeasurementUnit', 'MTQ');
+                 altParams.append('exportServiceMode', 'CY');
+                 altParams.append('importServiceMode', 'CY');
+                 altParams.append('startDateType', 'D');
+                 altParams.append('dateRange', 'P8W');  // Try longer date range
                  
                  console.log('🌐 Alternative Ocean Products Request URL:', 'https://api.maersk.com/products/ocean-products?' + altParams.toString());
                  
@@ -319,33 +332,40 @@ jobs:
                    console.log('🔄 Trying Shanghai→Los Angeles route as alternative...');
                    
                    // Try Shanghai to Los Angeles route
-                   const shanghaiResponse = await makeRequest('api.maersk.com', '/reference-data/locations?countryCode=CN&cityName=Shanghai&limit=10', headers);
+                                        const shanghaiLocParams = new URLSearchParams();
+                     shanghaiLocParams.append('countryCode', 'CN');
+                     shanghaiLocParams.append('cityName', 'Shanghai');
+                     shanghaiLocParams.append('limit', '10');
+                     const shanghaiResponse = await makeRequest('api.maersk.com', '/reference-data/locations?' + shanghaiLocParams.toString(), headers);
                    if (shanghaiResponse.status === 200) {
                      const shanghaiLocations = JSON.parse(shanghaiResponse.data);
                      const shanghai = shanghaiLocations.find(loc => loc.cityName === 'Shanghai' && loc.countryCode === 'CN');
                      
                      if (shanghai) {
-                       const laResponse = await makeRequest('api.maersk.com', '/reference-data/locations?countryCode=US&cityName=Los Angeles&limit=10', headers);
+                                                const laLocParams = new URLSearchParams();
+                         laLocParams.append('countryCode', 'US');
+                         laLocParams.append('cityName', 'Los Angeles');
+                         laLocParams.append('limit', '10');
+                         const laResponse = await makeRequest('api.maersk.com', '/reference-data/locations?' + laLocParams.toString(), headers);
                        if (laResponse.status === 200) {
                          const laLocations = JSON.parse(laResponse.data);
                          const losAngeles = laLocations.find(loc => loc.cityName === 'Los Angeles' && loc.countryCode === 'US');
                          
                          if (losAngeles) {
-                           const shanghaiToLA = new URLSearchParams({
-                             carrierCollectionOriginGeoID: shanghai.carrierGeoID,
-                             carrierDeliveryDestinationGeoID: losAngeles.carrierGeoID,
-                             vesselOperatorCarrierCode: 'MAEU',
-                             cargoType: 'DRY',
-                             ISOEquipmentCode: '42G1',
-                             stuffingWeight: '18000',
-                             weightMeasurementUnit: 'KGS',
-                             stuffingVolume: '10',
-                             volumeMeasurementUnit: 'MTQ',
-                             exportServiceMode: 'CY',
-                             importServiceMode: 'CY',
-                             startDateType: 'D',
-                             dateRange: 'P8W'
-                           });
+                           const shanghaiToLA = new URLSearchParams();
+                           shanghaiToLA.append('carrierCollectionOriginGeoID', shanghai.carrierGeoID);
+                           shanghaiToLA.append('carrierDeliveryDestinationGeoID', losAngeles.carrierGeoID);
+                           shanghaiToLA.append('vesselOperatorCarrierCode', 'MAEU');
+                           shanghaiToLA.append('cargoType', 'DRY');
+                           shanghaiToLA.append('ISOEquipmentCode', '42G1');
+                           shanghaiToLA.append('stuffingWeight', '18000');
+                           shanghaiToLA.append('weightMeasurementUnit', 'KGS');
+                           shanghaiToLA.append('stuffingVolume', '10');
+                           shanghaiToLA.append('volumeMeasurementUnit', 'MTQ');
+                           shanghaiToLA.append('exportServiceMode', 'CY');
+                           shanghaiToLA.append('importServiceMode', 'CY');
+                           shanghaiToLA.append('startDateType', 'D');
+                           shanghaiToLA.append('dateRange', 'P8W');
                            
                            console.log('🌐 Shanghai→LA Ocean Products Request URL:', 'https://api.maersk.com/products/ocean-products?' + shanghaiToLA.toString());
                            
@@ -402,12 +422,11 @@ jobs:
           node -e "
           const https = require('node:https');
           
-          const params = new URLSearchParams({
-            ISOCountryCode: 'US',
-            portOfLoad: 'Houston',
-            vesselIMONumber: '9332987',
-            voyage: '535E'
-          });
+          const params = new URLSearchParams();
+          params.append('ISOCountryCode', 'US');
+          params.append('portOfLoad', 'Houston');
+          params.append('vesselIMONumber', '9332987');
+          params.append('voyage', '535E');
           
           const options = {
             hostname: 'api.maersk.com',
