@@ -67,7 +67,7 @@ jobs:
           pnpm exec prisma generate --schema=../../prisma/schema.prisma
           cd ../..
           echo "🚀 Running build..."
-          pnpm --filter web build || (echo "❌ Build failed with exit code $?" && exit 1)
+          pnpm build || (echo "❌ Build failed with exit code $?" && exit 1)
           echo "✅ Build completed successfully!"
           
       - name: Deploy to Vercel (Production)

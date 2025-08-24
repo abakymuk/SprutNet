@@ -55,6 +55,12 @@ jobs:
           ls -la prisma/
           echo "🔍 Environment variables:"
           env | grep -E "(NEXT_PUBLIC_|MAERSK_|DATABASE_|VERCEL_)" || echo "No matching env vars found"
+          echo "🔍 Node.js and pnpm versions:"
+          node --version
+          pnpm --version
+          echo "🔍 Checking if npx is available:"
+          which npx || echo "npx not found"
+          npx --version || echo "npx version check failed"
           
       - name: Build
         run: |
@@ -79,7 +85,7 @@ jobs:
           pnpm exec prisma generate --schema=../../prisma/schema.prisma
           cd ../..
           echo "🚀 Running build..."
-          pnpm --filter web build || (echo "❌ Build failed with exit code $?" && exit 1)
+          pnpm build || (echo "❌ Build failed with exit code $?" && exit 1)
           echo "✅ Build completed successfully!"
           
       - name: Deploy to Vercel (Staging)

@@ -12,9 +12,9 @@
     "test": "pnpm --filter web test",
     "test:e2e": "pnpm --filter web test:e2e",
     "clean": "pnpm -r exec rm -rf node_modules && rm -rf node_modules",
-    "prisma:generate": "prisma generate && cd apps/web && pnpm exec prisma generate --schema=../../prisma/schema.prisma && cd ../..",
-    "prisma:push": "prisma db push",
-    "prisma:studio": "prisma studio"
+    "prisma:generate": "pnpm exec prisma generate && cd apps/web && pnpm exec prisma generate --schema=../../prisma/schema.prisma && cd ../..",
+    "prisma:push": "pnpm exec prisma db push",
+    "prisma:studio": "pnpm exec prisma studio"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
