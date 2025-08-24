@@ -1,126 +1,195 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { searchDeadlines, getDeadlineById, getDeadlinesBySailing, getDeadlinesByPort, getDeadlinesByType } from '@sprutnet/shared/mocks';
-import type { DeadlineSearchQuery, DeadlineSearchResult } from '@sprutnet/shared/types';
+import { NextResponse } from 'next/server';
+import { PrismaClient } from '@prisma/client';
 
-/**
- * GET /api/deadlines
- * Поиск дедлайнов с поддержкой фильтрации
- */
-export async function GET(request: NextRequest) {
+const prisma = new PrismaClient();
+
+export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    
-    // Парсим параметры запроса
-    const sailingId = searchParams.get('sailingId') || undefined;
-    const portId = searchParams.get('portId') || undefined;
-    const type = searchParams.get('type') as any || undefined;
-    const deadlineDateFrom = searchParams.get('deadlineDateFrom') ? new Date(searchParams.get('deadlineDateFrom')!) : undefined;
-    const deadlineDateTo = searchParams.get('deadlineDateTo') ? new Date(searchParams.get('deadlineDateTo')!) : undefined;
-    const status = searchParams.get('status') as any || undefined;
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const offset = parseInt(searchParams.get('offset') || '0');
-    
-    // Проверяем флаг для использования моков
-    const useMocks = process.env.FEATURE_MAERSK !== 'true';
-    
-    if (useMocks) {
-      // Используем моковые данные
-      const results = searchDeadlines(
-        sailingId,
-        portId,
-        type,
-        deadlineDateFrom,
-        deadlineDateTo,
-        status,
-        limit + offset
-      );
-      
-      // Применяем пагинацию
-      const paginatedResults = results.slice(offset, offset + limit);
-      
-      const response: DeadlineSearchResult = {
-        deadlines: paginatedResults,
-        total: results.length,
-        offset,
-        limit,
-        hasNext: offset + limit < results.length
-      };
-      
-      return NextResponse.json(response, { status: 200 });
-    } else {
-      // TODO: Интеграция с реальным Maersk API
+    const sailingId = searchParams.get('sailingId');
+    const vesselImo = searchParams.get('vesselImo');
+    const voyage = searchParams.get('voyage');
+
+    if (!sailingId && !vesselImo && !voyage) {
       return NextResponse.json(
-        { error: 'Maersk API integration not implemented yet' },
-        { status: 501 }
+        { error: 'Необходимо указать sailingId, vesselImo или voyage' },
+        { status: 400 }
       );
     }
+
+    // Поиск дедлайнов по различным параметрам
+    let whereCondition: any = {};
+
+    if (sailingId) {
+      // Если передан sailingId, ищем по TransportLeg
+      whereCondition = {
+        transportLegId: sailingId
+      };
+    } else if (vesselImo && voyage) {
+      // Если передан vesselImo и voyage, ищем через ShipmentDeadline
+      whereCondition = {
+        vesselImoNumber: parseInt(vesselImo),
+        voyage: voyage
+      };
+    }
+
+    // Получаем дедлайны из базы данных
+    const shipmentDeadlines = await prisma.shipmentDeadline.findMany({
+      where: whereCondition,
+      include: {
+        deadlines: {
+          orderBy: {
+            deadlineLocal: 'asc'
+          }
+        },
+        vessel: true
+      }
+    });
+
+        // Если дедлайнов нет, создаем моковые данные для демонстрации
+    if (shipmentDeadlines.length === 0) {
+      const mockDeadlines = generateMockDeadlines(sailingId);
+      return NextResponse.json({
+        deadlines: mockDeadlines,
+        total: mockDeadlines.length,
+        source: 'mock'
+      });
+    }
+
+    // Преобразуем данные в формат для фронтенда
+    const deadlines = shipmentDeadlines.flatMap(sd => 
+      sd.deadlines.map(deadline => ({
+        id: deadline.id,
+        name: deadline.deadlineName || 'Дедлайн',
+        type: getDeadlineType(deadline.deadlineName || ''),
+        deadlineLocal: deadline.deadlineLocal?.toISOString() || new Date().toISOString(),
+        description: getDeadlineDescription(deadline.deadlineName || ''),
+        status: getDeadlineStatus(deadline.deadlineLocal)
+      }))
+    );
+
+    // Если дедлайнов нет, создаем моковые данные для демонстрации
+    if (deadlines.length === 0) {
+      const mockDeadlines = generateMockDeadlines(sailingId);
+      return NextResponse.json({
+        deadlines: mockDeadlines,
+        total: mockDeadlines.length,
+        source: 'mock'
+      });
+    }
+
+    return NextResponse.json({
+      deadlines,
+      total: deadlines.length,
+      source: 'database'
+    });
+
   } catch (error) {
-    console.error('Error in deadlines API:', error);
+    console.error('❌ Ошибка при получении дедлайнов:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Ошибка при получении дедлайнов' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
-/**
- * POST /api/deadlines
- * Поиск дедлайнов с JSON body
- */
-export async function POST(request: NextRequest) {
-  try {
-    const body: DeadlineSearchQuery = await request.json();
-    
-    const { 
-      sailingId, 
-      portId, 
-      type, 
-      deadlineDateFrom, 
-      deadlineDateTo, 
-      status, 
-      limit = 10, 
-      offset = 0 
-    } = body;
-    
-    // Проверяем флаг для использования моков
-    const useMocks = process.env.FEATURE_MAERSK !== 'true';
-    
-    if (useMocks) {
-      // Используем моковые данные
-      const results = searchDeadlines(
-        sailingId,
-        portId,
-        type,
-        deadlineDateFrom,
-        deadlineDateTo,
-        status,
-        limit + offset
-      );
-      
-      // Применяем пагинацию
-      const paginatedResults = results.slice(offset, offset + limit);
-      
-      const response: DeadlineSearchResult = {
-        deadlines: paginatedResults,
-        total: results.length,
-        offset,
-        limit,
-        hasNext: offset + limit < results.length
-      };
-      
-      return NextResponse.json(response, { status: 200 });
-    } else {
-      // TODO: Интеграция с реальным Maersk API
-      return NextResponse.json(
-        { error: 'Maersk API integration not implemented yet' },
-        { status: 501 }
-      );
+// Вспомогательные функции
+function getDeadlineType(deadlineName: string): string {
+  const name = deadlineName.toLowerCase();
+  
+  if (name.includes('doc') || name.includes('document')) return 'DOC';
+  if (name.includes('cy') || name.includes('yard')) return 'CY';
+  if (name.includes('vgm') || name.includes('weight')) return 'VGM';
+  if (name.includes('customs') || name.includes('таможня')) return 'CUSTOMS';
+  if (name.includes('booking') || name.includes('бронирование')) return 'BOOKING';
+  if (name.includes('gate in') || name.includes('въезд')) return 'GATE_IN';
+  if (name.includes('gate out') || name.includes('выезд')) return 'GATE_OUT';
+  if (name.includes('loading') || name.includes('погрузка')) return 'LOADING';
+  
+  return 'OTHER';
+}
+
+function getDeadlineDescription(deadlineName: string): string {
+  const name = deadlineName.toLowerCase();
+  
+  if (name.includes('doc')) return 'Подготовка и подача документов';
+  if (name.includes('cy')) return 'Доставка контейнера на терминал';
+  if (name.includes('vgm')) return 'Подтверждение веса груза';
+  if (name.includes('customs')) return 'Таможенное оформление';
+  if (name.includes('booking')) return 'Подтверждение бронирования';
+  if (name.includes('gate in')) return 'Въезд на терминал';
+  if (name.includes('gate out')) return 'Выезд с терминала';
+  if (name.includes('loading')) return 'Погрузка на судно';
+  
+  return 'Важный дедлайн для рейса';
+}
+
+function getDeadlineStatus(deadlineDate: Date | null): string {
+  if (!deadlineDate) return 'UPCOMING';
+  
+  const now = new Date();
+  const diffHours = (deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+  
+  if (diffHours < 0) return 'OVERDUE';
+  if (diffHours < 24) return 'DUE_SOON';
+  if (diffHours < 72) return 'UPCOMING';
+  return 'COMPLETED';
+}
+
+function generateMockDeadlines(sailingId: string | null) {
+  const now = new Date();
+  const baseDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Завтра
+  
+  return [
+    {
+      id: '1',
+      name: 'Documents Cut-off',
+      type: 'DOC',
+      deadlineLocal: new Date(baseDate.getTime() - 48 * 60 * 60 * 1000).toISOString(),
+      description: 'Подготовка и подача документов',
+      status: 'UPCOMING'
+    },
+    {
+      id: '2',
+      name: 'Container Yard Cut-off',
+      type: 'CY',
+      deadlineLocal: new Date(baseDate.getTime() - 24 * 60 * 60 * 1000).toISOString(),
+      description: 'Доставка контейнера на терминал',
+      status: 'DUE_SOON'
+    },
+    {
+      id: '3',
+      name: 'VGM Cut-off',
+      type: 'VGM',
+      deadlineLocal: new Date(baseDate.getTime() - 12 * 60 * 60 * 1000).toISOString(),
+      description: 'Подтверждение веса груза',
+      status: 'DUE_SOON'
+    },
+    {
+      id: '4',
+      name: 'Customs Clearance',
+      type: 'CUSTOMS',
+      deadlineLocal: new Date(baseDate.getTime() - 6 * 60 * 60 * 1000).toISOString(),
+      description: 'Таможенное оформление',
+      status: 'OVERDUE'
+    },
+    {
+      id: '5',
+      name: 'Gate In',
+      type: 'GATE_IN',
+      deadlineLocal: new Date(baseDate.getTime() - 2 * 60 * 60 * 1000).toISOString(),
+      description: 'Въезд на терминал',
+      status: 'OVERDUE'
+    },
+    {
+      id: '6',
+      name: 'Loading',
+      type: 'LOADING',
+      deadlineLocal: new Date(baseDate.getTime() + 6 * 60 * 60 * 1000).toISOString(),
+      description: 'Погрузка на судно',
+      status: 'UPCOMING'
     }
-  } catch (error) {
-    console.error('Error in deadlines API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  ];
 }

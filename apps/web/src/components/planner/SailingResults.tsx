@@ -77,6 +77,7 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { differenceInDays } from "date-fns";
 import type { Sailing } from "@sprutnet/shared/types";
+import { DeadlinesModal } from "./deadlines-modal";
 
 interface SailingResultsProps {
   sailings: Sailing[];
@@ -558,6 +559,18 @@ export function SailingResults({
                             <p>Подробности</p>
                           </TooltipContent>
                         </Tooltip>
+                        <DeadlinesModal sailing={sailing}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Clock className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Дедлайны</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </DeadlinesModal>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button variant="outline" size="sm">
@@ -761,6 +774,12 @@ export function SailingResults({
                             <Button variant="outline" size="sm">
                               Подробнее
                             </Button>
+                            <DeadlinesModal sailing={sailing}>
+                              <Button variant="outline" size="sm">
+                                <Clock className="h-4 w-4 mr-1" />
+                                Дедлайны
+                              </Button>
+                            </DeadlinesModal>
                             <Button className="flex-1">Выбрать рейс</Button>
                           </div>
                         </div>
