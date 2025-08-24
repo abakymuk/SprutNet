@@ -13,10 +13,10 @@ import {
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { imo: string } }
+  { params }: { params: Promise<{ imo: string }> }
 ) {
   try {
-    const imo = params.imo;
+    const { imo } = await params;
     
     console.log("🚢 Vessels API called with IMO:", imo);
 

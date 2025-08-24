@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +43,7 @@ export function VesselCard({ imo, children }: VesselCardProps) {
   const [error, setError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
-  const fetchVesselInfo = async () => {
+  const fetchVesselInfo = useCallback(async () => {
     if (!imo) return;
 
     setIsLoading(true);
@@ -69,13 +69,13 @@ export function VesselCard({ imo, children }: VesselCardProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [imo]);
 
   useEffect(() => {
     if (isOpen) {
       fetchVesselInfo();
     }
-  }, [isOpen, imo]);
+  }, [isOpen, imo, fetchVesselInfo]);
 
   const getFlagCountry = (flagCode: string) => {
     const countries: Record<string, string> = {
