@@ -1,6 +1,11 @@
 # Dependencies
 node_modules/
-.pnpm-store/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output/
 
 # Next.js
 .next/
@@ -8,19 +13,44 @@ out/
 build/
 dist/
 
-# Environment variables
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+
 # Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+logs
+*.log
 
 # Runtime data
 pids
@@ -30,17 +60,10 @@ pids
 
 # Coverage directory used by tools like istanbul
 coverage/
-*.lcov
-
-# nyc test coverage
-.nyc_output
 
 # Dependency directories
 node_modules/
 jspm_packages/
-
-# TypeScript cache
-*.tsbuildinfo
 
 # Optional npm cache directory
 .npm
@@ -87,33 +110,25 @@ tmp/
 temp/
 
 # Editor directories and files
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# Database
+*.db
+*.sqlite
+*.sqlite3
 
-# Vercel
-.vercel
-
-# Vercel
-.vercel
+# Prisma
+prisma/migrations/
 
 # Supabase
 .supabase/
 
-# Testing
-coverage/
-.nyc_output/
-
-# Misc
-*.log
+# Maersk API
+maersk-api-cache/

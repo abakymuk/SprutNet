@@ -1,119 +1,249 @@
-# 🚢 SprutNet - MVP Shipping Planner
+# 🚢 SprutNet - Shipping Planner v1.0.0
 
-Планировщик морских перевозок с интеграцией Maersk API.
+**Интеллектуальная система планирования морских перевозок с интеграцией API Maersk**
+
+[![Next.js](https://img.shields.io/badge/Next.js-15.5.0-black)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19.1.1-blue)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-blue)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.17-38B2AC)](https://tailwindcss.com/)
+[![shadcn/ui](https://img.shields.io/badge/shadcn/ui-Latest-black)](https://ui.shadcn.com/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+## 🎯 О проекте
+
+SprutNet - это MVP планировщик морских перевозок, который помогает логистическим компаниям оптимизировать маршруты, сокращать затраты и время доставки. Система интегрирована с API Maersk для получения актуальных данных о рейсах, судах и портах.
+
+## ✨ Ключевые возможности
+
+- 🔍 **Интеллектуальный поиск портов** с автодополнением
+- 📅 **Планирование дат** с учетом доступности рейсов
+- 📊 **Анализ маршрутов** по времени, стоимости и оптимальности
+- 🌍 **Глобальное покрытие** через интеграцию с Maersk API
+- ⏰ **Данные в реальном времени** о расписаниях и доступности
+- 💰 **Оптимизация затрат** с поиском выгодных тарифов
+- 🎨 **Современный UI/UX** на базе shadcn/ui
+- 🌙 **Поддержка тем** (светлая/темная)
+
+## 🛠 Технологический стек
+
+### Frontend
+- **Next.js 15.5.0** - React фреймворк
+- **React 19.1.1** - UI библиотека
+- **TypeScript 5.9.2** - типизация
+- **Tailwind CSS 3.4.17** - стилизация
+- **shadcn/ui** - компонентная библиотека
+- **Lucide React** - иконки
+- **React Hook Form** - формы
+- **Zod** - валидация
+
+### Backend & Database
+- **Next.js API Routes** - серверная часть
+- **Prisma 5.22.0** - ORM
+- **PostgreSQL** - база данных
+- **Supabase** - хостинг БД
+
+### Интеграции
+- **Maersk API** - данные о рейсах и судах
+- **date-fns** - работа с датами
 
 ## 🚀 Быстрый старт
 
 ### Предварительные требования
 
-- Node.js 18+
-- pnpm 8+
-- Supabase проект
-- Maersk API ключи
-- Vercel аккаунт (для деплоя)
+- Node.js >= 18.0.0
+- pnpm >= 8.0.0
+- PostgreSQL база данных
 
 ### Установка
 
-```bash
-# Клонирование репозитория
-git clone https://github.com/abakymuk/SprutNet.git
-cd SprutNet
+1. **Клонируйте репозиторий**
+   ```bash
+   git clone https://github.com/your-username/sprutnet.git
+   cd sprutnet
+   ```
 
-# Установка зависимостей
-pnpm install
+2. **Установите зависимости**
+   ```bash
+   pnpm install
+   ```
 
-# Настройка переменных окружения
-cp .env.example .env
-# Заполните .env файл вашими значениями
+3. **Настройте переменные окружения**
+   ```bash
+   cp .env.example .env.local
+   ```
+   
+   Отредактируйте `.env.local`:
+   ```env
+   # Database
+   DATABASE_URL="postgresql://..."
+   
+   # Maersk API
+   MAERSK_API_KEY="your-api-key"
+   FEATURE_MAERSK=false
+   
+   # Supabase
+   NEXT_PUBLIC_SUPABASE_URL="your-supabase-url"
+   NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key"
+   SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+   ```
 
-# Генерация Prisma Client
-pnpm prisma:generate
+4. **Настройте базу данных**
+   ```bash
+   pnpm prisma:generate
+   pnpm prisma:push
+   ```
 
-# Запуск в режиме разработки
-pnpm dev
+5. **Запустите проект**
+   ```bash
+   pnpm dev
+   ```
+
+6. **Откройте браузер**
+   ```
+   http://localhost:3000
+   ```
+
+## 📁 Структура проекта
+
+```
+sprutnet/
+├── apps/
+│   └── web/                    # Next.js приложение
+│       ├── src/
+│       │   ├── app/           # App Router страницы
+│       │   ├── components/    # React компоненты
+│       │   │   ├── ui/        # shadcn/ui компоненты
+│       │   │   └── planner/   # Компоненты планировщика
+│       │   └── lib/           # Утилиты
+│       └── public/            # Статические файлы
+├── packages/
+│   └── shared/                # Общие типы и утилиты
+├── prisma/                    # Схема базы данных
+├── docs/                      # Документация
+└── .github/                   # GitHub Actions
 ```
 
-## 🔐 Настройка CI/CD
+## 🎨 Компоненты UI
 
-Для работы CI/CD необходимо настроить GitHub Secrets. Подробная инструкция: [docs/GITHUB_SECRETS_SETUP.md](docs/GITHUB_SECRETS_SETUP.md)
+Проект использует полный набор shadcn/ui компонентов:
 
-### Быстрая настройка секретов
+- **Button** - кнопки всех типов
+- **Card** - карточки для контента
+- **Badge** - бейджи для статусов
+- **Tabs** - вкладки
+- **Table** - таблицы
+- **Form** - формы с валидацией
+- **Dialog** - модальные окна
+- **Dropdown Menu** - выпадающие меню
+- **Progress** - индикаторы прогресса
+- **Alert** - уведомления
+- **Theme Toggle** - переключатель тем
 
-Добавьте следующие секреты в GitHub (Settings → Secrets and variables → Actions):
-
-**Обязательные:**
-- `NEXT_PUBLIC_SUPABASE_URL` - URL вашего Supabase проекта
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Публичный ключ Supabase
-- `SUPABASE_SERVICE_ROLE_KEY` - Сервисный ключ Supabase
-- `DATABASE_URL` - URL подключения к базе данных
-- `MAERSK_API_KEY` - Consumer Key для Maersk API
-- `MAERSK_API_SECRET` - Client Secret для Maersk API
-- `MAERSK_API_BASE_URL` - Базовый URL для Maersk API
-
-**Для деплоя в Vercel:**
-- `VERCEL_TOKEN` - Токен для деплоя в Vercel
-- `VERCEL_ORG_ID` - ID организации в Vercel
-- `VERCEL_PROJECT_ID` - ID проекта в Vercel
-
-## 📚 Документация
-
-- [Настройка GitHub Secrets](docs/GITHUB_SECRETS_SETUP.md)
-- [Интеграция с Maersk API](docs/API_INTEGRATION_COMPLETE.md)
-
-## 🛠️ Разработка
-
-### Доступные команды
+## 🔧 Скрипты
 
 ```bash
 # Разработка
-pnpm dev          # Запуск в режиме разработки
-pnpm build        # Сборка проекта
-pnpm start        # Запуск продакшн сервера
+pnpm dev              # Запуск dev сервера
+pnpm build            # Сборка проекта
+pnpm start            # Запуск production сервера
 
 # Качество кода
-pnpm lint         # Проверка линтером
-pnpm type-check   # Проверка типов TypeScript
-pnpm test         # Запуск тестов
+pnpm lint             # Проверка ESLint
+pnpm type-check       # Проверка TypeScript
+
+# Тестирование
+pnpm test             # Запуск тестов
+pnpm test:e2e         # E2E тесты
 
 # База данных
 pnpm prisma:generate  # Генерация Prisma Client
-pnpm prisma:push      # Отправка схемы в базу данных
-pnpm prisma:studio    # Запуск Prisma Studio
-```
+pnpm prisma:push      # Применение миграций
+pnpm prisma:studio    # Prisma Studio
 
-### Структура проекта
-
-```
-SprutNet/
-├── apps/
-│   └── web/                 # Next.js приложение
-│       ├── src/
-│       │   ├── app/         # App Router
-│       │   ├── components/  # UI компоненты
-│       │   └── lib/         # Утилиты и конфигурация
-│       └── public/          # Статические файлы
-├── prisma/                  # Схема базы данных
-├── docs/                    # Документация
-└── .github/workflows/       # CI/CD workflows
+# Утилиты
+pnpm clean            # Очистка node_modules
 ```
 
 ## 🌐 API Endpoints
 
-- `GET /api/vessels` - Получение данных о судах
-- `GET /api/locations` - Получение данных о локациях
-- `GET /api/ocean-products` - Получение данных о морских продуктах
-- `GET /api/deadlines` - Получение данных о дедлайнах
-- `POST /api/load-data` - Загрузка данных из Maersk API
-- `POST /api/seed-data` - Заполнение тестовыми данными
+### Расписания
+- `GET /api/schedules` - поиск рейсов
+- `GET /api/ports/search` - поиск портов
 
-## 🚀 Деплой
+### Данные Maersk
+- `GET /api/vessels` - список судов
+- `GET /api/locations` - список локаций
+- `GET /api/ocean-products` - расписания
+- `GET /api/deadlines` - дедлайны
 
-### Staging
-Автоматический деплой в staging при push в ветку `develop`.
+### Управление данными
+- `POST /api/load-data` - загрузка данных
+- `POST /api/seed-data` - заполнение тестовыми данными
 
-### Production
-Автоматический деплой в production при создании тега `v*`.
+## 🎯 Основные страницы
 
-## 📄 Лицензия
+### Главная страница (`/`)
+- Обзор возможностей системы
+- Статистика и метрики
+- Призывы к действию
 
-MIT
+### Планировщик (`/planner`)
+- Поиск оптимальных маршрутов
+- Выбор портов отправления и назначения
+- Анализ результатов поиска
+- Интерактивная помощь
+
+### База данных (`/data`)
+- Просмотр портов, судов и расписаний
+- Фильтрация и сортировка данных
+- Экспорт данных
+- Статистика системы
+
+## 🔒 Безопасность
+
+- Валидация всех входных данных через Zod
+- Защищенные API endpoints
+- Переменные окружения для конфиденциальных данных
+- TypeScript для предотвращения ошибок типов
+
+## 🚀 Развертывание
+
+### Vercel (рекомендуется)
+1. Подключите репозиторий к Vercel
+2. Настройте переменные окружения
+3. Деплой автоматический при push в main
+
+### Docker
+```bash
+docker build -t sprutnet .
+docker run -p 3000:3000 sprutnet
+```
+
+## 🤝 Вклад в проект
+
+1. Fork репозитория
+2. Создайте feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit изменения (`git commit -m 'Add amazing feature'`)
+4. Push в branch (`git push origin feature/amazing-feature`)
+5. Откройте Pull Request
+
+## 📝 Лицензия
+
+Этот проект лицензирован под MIT License - см. файл [LICENSE](LICENSE) для деталей.
+
+## 📞 Поддержка
+
+- **Email**: support@sprutnet.com
+- **Issues**: [GitHub Issues](https://github.com/your-username/sprutnet/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/your-username/sprutnet/discussions)
+
+## 🏆 Благодарности
+
+- [Maersk](https://www.maersk.com/) за предоставление API
+- [shadcn/ui](https://ui.shadcn.com/) за отличные компоненты
+- [Vercel](https://vercel.com/) за платформу развертывания
+- [Supabase](https://supabase.com/) за хостинг базы данных
+
+---
+
+**SprutNet v1.0.0** - Интеллектуальное планирование морских перевозок 🚢
