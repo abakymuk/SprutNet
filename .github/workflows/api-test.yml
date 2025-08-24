@@ -46,6 +46,8 @@ jobs:
       - name: Test Vessels API
         run: |
           echo "🧪 Testing Vessels API..."
+          echo "🔑 API Key: ${MAERSK_API_KEY:0:10}..."
+          
           node -e "
           const https = require('node:https');
           
@@ -56,24 +58,44 @@ jobs:
             method: 'GET',
             headers: {
               'Accept': 'application/json',
+              'Content-Type': 'application/json',
               'Consumer-Key': process.env.MAERSK_API_KEY,
               'User-Agent': 'SprutNet/1.0'
             }
           };
           
+          console.log('🌐 Request URL:', 'https://' + options.hostname + options.path);
+          
           const req = https.request(options, (res) => {
-            console.log('Status:', res.statusCode);
-            if (res.statusCode === 200) {
-              console.log('✅ Vessels API is working');
-              process.exit(0);
-            } else {
-              console.log('❌ Vessels API failed');
-              process.exit(1);
-            }
+            console.log('📊 Response Status:', res.statusCode);
+            
+            let data = '';
+            res.on('data', (chunk) => {
+              data += chunk;
+            });
+            
+            res.on('end', () => {
+              console.log('📄 Response Body:', data.substring(0, 500) + '...');
+              
+              if (res.statusCode === 200) {
+                console.log('✅ Vessels API is working');
+                process.exit(0);
+              } else {
+                console.log('❌ Vessels API failed with status:', res.statusCode);
+                console.log('❌ Error details:', data);
+                process.exit(1);
+              }
+            });
           });
           
           req.on('error', (e) => {
-            console.error('❌ Error:', e.message);
+            console.error('❌ Network Error:', e.message);
+            process.exit(1);
+          });
+          
+          req.setTimeout(10000, () => {
+            console.error('❌ Request timeout');
+            req.destroy();
             process.exit(1);
           });
           
@@ -85,34 +107,60 @@ jobs:
       - name: Test Locations API
         run: |
           echo "🧪 Testing Locations API..."
+          echo "🔑 API Key: ${MAERSK_API_KEY:0:10}..."
+          echo "🔑 API Secret: ${MAERSK_API_SECRET:0:10}..."
+          
           node -e "
           const https = require('node:https');
           
           const options = {
             hostname: 'api.maersk.com',
             port: 443,
-            path: '/reference-data/locations?countryCode=US&limit=1',
+            path: '/reference-data/locations?countryCode=US&limit=10',
             method: 'GET',
             headers: {
               'Accept': 'application/json',
+              'Content-Type': 'application/json',
               'Consumer-Key': process.env.MAERSK_API_KEY,
+              'Consumer-Secret': process.env.MAERSK_API_SECRET,
               'User-Agent': 'SprutNet/1.0'
             }
           };
           
+          console.log('🌐 Request URL:', 'https://' + options.hostname + options.path);
+          console.log('🔑 Headers:', JSON.stringify(options.headers, null, 2));
+          
           const req = https.request(options, (res) => {
-            console.log('Status:', res.statusCode);
-            if (res.statusCode === 200) {
-              console.log('✅ Locations API is working');
-              process.exit(0);
-            } else {
-              console.log('❌ Locations API failed');
-              process.exit(1);
-            }
+            console.log('📊 Response Status:', res.statusCode);
+            console.log('📊 Response Headers:', JSON.stringify(res.headers, null, 2));
+            
+            let data = '';
+            res.on('data', (chunk) => {
+              data += chunk;
+            });
+            
+            res.on('end', () => {
+              console.log('📄 Response Body:', data.substring(0, 500) + '...');
+              
+              if (res.statusCode === 200) {
+                console.log('✅ Locations API is working');
+                process.exit(0);
+              } else {
+                console.log('❌ Locations API failed with status:', res.statusCode);
+                console.log('❌ Error details:', data);
+                process.exit(1);
+              }
+            });
           });
           
           req.on('error', (e) => {
-            console.error('❌ Error:', e.message);
+            console.error('❌ Network Error:', e.message);
+            process.exit(1);
+          });
+          
+          req.setTimeout(10000, () => {
+            console.error('❌ Request timeout');
+            req.destroy();
             process.exit(1);
           });
           
@@ -120,10 +168,13 @@ jobs:
           "
         env:
           MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
+          MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
           
       - name: Test Ocean Products API
         run: |
           echo "🧪 Testing Ocean Products API..."
+          echo "🔑 API Key: ${MAERSK_API_KEY:0:10}..."
+          
           node -e "
           const https = require('node:https');
           
@@ -152,24 +203,44 @@ jobs:
             method: 'GET',
             headers: {
               'Accept': 'application/json',
+              'Content-Type': 'application/json',
               'Consumer-Key': process.env.MAERSK_API_KEY,
               'User-Agent': 'SprutNet/1.0'
             }
           };
           
+          console.log('🌐 Request URL:', 'https://' + options.hostname + options.path);
+          
           const req = https.request(options, (res) => {
-            console.log('Status:', res.statusCode);
-            if (res.statusCode === 200) {
-              console.log('✅ Ocean Products API is working');
-              process.exit(0);
-            } else {
-              console.log('❌ Ocean Products API failed');
-              process.exit(1);
-            }
+            console.log('📊 Response Status:', res.statusCode);
+            
+            let data = '';
+            res.on('data', (chunk) => {
+              data += chunk;
+            });
+            
+            res.on('end', () => {
+              console.log('📄 Response Body:', data.substring(0, 500) + '...');
+              
+              if (res.statusCode === 200) {
+                console.log('✅ Ocean Products API is working');
+                process.exit(0);
+              } else {
+                console.log('❌ Ocean Products API failed with status:', res.statusCode);
+                console.log('❌ Error details:', data);
+                process.exit(1);
+              }
+            });
           });
           
           req.on('error', (e) => {
-            console.error('❌ Error:', e.message);
+            console.error('❌ Network Error:', e.message);
+            process.exit(1);
+          });
+          
+          req.setTimeout(10000, () => {
+            console.error('❌ Request timeout');
+            req.destroy();
             process.exit(1);
           });
           
@@ -181,6 +252,8 @@ jobs:
       - name: Test Deadlines API
         run: |
           echo "🧪 Testing Deadlines API..."
+          echo "🔑 API Key: ${MAERSK_API_KEY:0:10}..."
+          
           node -e "
           const https = require('node:https');
           
@@ -198,24 +271,44 @@ jobs:
             method: 'GET',
             headers: {
               'Accept': 'application/json',
+              'Content-Type': 'application/json',
               'Consumer-Key': process.env.MAERSK_API_KEY,
               'User-Agent': 'SprutNet/1.0'
             }
           };
           
+          console.log('🌐 Request URL:', 'https://' + options.hostname + options.path);
+          
           const req = https.request(options, (res) => {
-            console.log('Status:', res.statusCode);
-            if (res.statusCode === 200) {
-              console.log('✅ Deadlines API is working');
-              process.exit(0);
-            } else {
-              console.log('❌ Deadlines API failed');
-              process.exit(1);
-            }
+            console.log('📊 Response Status:', res.statusCode);
+            
+            let data = '';
+            res.on('data', (chunk) => {
+              data += chunk;
+            });
+            
+            res.on('end', () => {
+              console.log('📄 Response Body:', data.substring(0, 500) + '...');
+              
+              if (res.statusCode === 200) {
+                console.log('✅ Deadlines API is working');
+                process.exit(0);
+              } else {
+                console.log('❌ Deadlines API failed with status:', res.statusCode);
+                console.log('❌ Error details:', data);
+                process.exit(1);
+              }
+            });
           });
           
           req.on('error', (e) => {
-            console.error('❌ Error:', e.message);
+            console.error('❌ Network Error:', e.message);
+            process.exit(1);
+          });
+          
+          req.setTimeout(10000, () => {
+            console.error('❌ Request timeout');
+            req.destroy();
             process.exit(1);
           });
           
