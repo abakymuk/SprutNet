@@ -1,17 +1,17 @@
 // Maersk API Configuration
 export const MAERSK_API_CONFIG = {
   // Authentication
-  consumerKey: process.env.NEXT_PUBLIC_MAERSK_API_KEY || 'IR6PjVz4jkGu8RaazMat1Tz0l9NevMWd',
+  consumerKey: process.env.MAERSK_API_KEY || 'IR6PjVz4jkGu8RaazMat1Tz0l9NevMWd',
   clientSecret: process.env.MAERSK_API_SECRET || 'CnIcg3YgUUtSp8a3',
 
   // Base URLs
-  baseUrl: process.env.NEXT_PUBLIC_MAERSK_API_BASE_URL || 'https://api.maersk.com',
+  baseUrl: process.env.MAERSK_API_BASE_URL || 'https://api.maersk.com',
 
   // API Endpoints
   endpoints: {
     // Locations API - Reference Data (✅ РАБОТАЕТ в продакшне)
     locations: {
-      base: 'https://api.maersk.com/reference-data',
+      base: process.env.MAERSK_LOCATIONS_API_URL || 'https://api.maersk.com/reference-data',
       search: '/locations',
       countries: '/countries',
       carriers: '/carriers'
@@ -19,19 +19,19 @@ export const MAERSK_API_CONFIG = {
 
     // Ocean Products API - Products (✅ РАБОТАЕТ в продакшне)
     oceanProducts: {
-      base: 'https://api.maersk.com/products',
+      base: process.env.MAERSK_P2P_API_URL || 'https://api.maersk.com/products',
       search: '/ocean-products'
     },
 
     // Vessels API - Reference Data (✅ РАБОТАЕТ в продакшне)
     vessels: {
-      base: 'https://api.maersk.com/reference-data',
+      base: process.env.MAERSK_VESSELS_API_URL || 'https://api.maersk.com/reference-data',
       list: '/vessels'
     },
 
     // Deadlines API - Shipment Deadlines (✅ РАБОТАЕТ в продакшне)
     deadlines: {
-      base: 'https://api.maersk.com',
+      base: process.env.MAERSK_DEADLINES_API_URL || 'https://api.maersk.com',
       search: '/shipment-deadlines',
       details: '/shipment-deadlines/details'
     }

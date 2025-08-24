@@ -16,7 +16,7 @@ async function makeRequest(hostname: string, path: string, headers: Record<strin
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'Consumer-Key': process.env.MAERSK_API_KEY,
+        'Consumer-Key': process.env.MAERSK_API_KEY || 'IR6PjVz4jkGu8RaazMat1Tz0l9NevMWd',
         'User-Agent': 'SprutNet/1.0',
         ...headers
       }
@@ -57,7 +57,7 @@ async function loadVesselsData() {
   console.log('🚢 Загружаем данные о судах...');
   
   try {
-    const response: any = await makeRequest('api-stage.maersk.com', '/reference-data/vessels?limit=50');
+    const response: any = await makeRequest('api.maersk.com', '/reference-data/vessels?limit=50');
     
     if (response.status === 200 && Array.isArray(response.data)) {
       console.log(`📊 Получено ${response.data.length} судов`);
@@ -106,7 +106,7 @@ async function loadLocationsData() {
   console.log('📍 Загружаем данные о локациях...');
   
   try {
-    const response: any = await makeRequest('api-stage.maersk.com', '/reference-data/locations?limit=100');
+    const response: any = await makeRequest('api.maersk.com', '/reference-data/locations?limit=100');
     
     if (response.status === 200 && Array.isArray(response.data)) {
       console.log(`📊 Получено ${response.data.length} локаций`);
@@ -178,7 +178,7 @@ async function loadDeadlinesData() {
           voyage: '001E'
         });
         
-        const response: any = await makeRequest('api-stage.maersk.com', `/shipment-deadlines?${params.toString()}`);
+        const response: any = await makeRequest('api.maersk.com', `/shipment-deadlines?${params.toString()}`);
         
         if (response.status === 200 && Array.isArray(response.data)) {
           console.log(`📊 Получено ${response.data.length} сроков для судна ${vessel.id}`);
@@ -253,7 +253,7 @@ async function loadOceanProductsData() {
       dateRange: 'P4W'
     });
     
-    const response: any = await makeRequest('api-stage.maersk.com', `/products/ocean-products?${params.toString()}`);
+    const response: any = await makeRequest('api.maersk.com', `/products/ocean-products?${params.toString()}`);
     
     if (response.status === 200 && Array.isArray(response.data)) {
       console.log(`📊 Получено ${response.data.length} расписаний`);

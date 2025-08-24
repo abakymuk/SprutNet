@@ -87,6 +87,9 @@ export default function HomePage() {
               <Button variant="outline" size="lg" asChild>
                 <Link href="/e2e-test">E2E Тесты</Link>
               </Button>
+              <Button variant="outline" size="lg" asChild>
+                <Link href="/maersk-status">API Статус</Link>
+              </Button>
             </div>
           </div>
         </div>

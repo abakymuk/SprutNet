@@ -69,22 +69,28 @@ SprutNet - это MVP планировщик морских перевозок, 
 
 3. **Настройте переменные окружения**
    ```bash
-   cp .env.example .env.local
+   cp apps/web/env.example apps/web/.env.local
    ```
    
-   Отредактируйте `.env.local`:
+   Отредактируйте `apps/web/.env.local`:
    ```env
-   # Database
-   DATABASE_URL="postgresql://..."
+   # Maersk API Configuration
+   MAERSK_API_KEY=IR6PjVz4jkGu8RaazMat1Tz0l9NevMWd
+   MAERSK_API_SECRET=CnIcg3YgUUtSp8a3
+   MAERSK_API_BASE_URL=https://api.maersk.com
    
-   # Maersk API
-   MAERSK_API_KEY="your-api-key"
-   FEATURE_MAERSK=false
+   # Maersk API Endpoints
+   MAERSK_LOCATIONS_API_URL=https://api.maersk.com/reference-data
+   MAERSK_P2P_API_URL=https://api.maersk.com/products
+   MAERSK_VESSELS_API_URL=https://api.maersk.com/reference-data
+   MAERSK_DEADLINES_API_URL=https://api.maersk.com
    
-   # Supabase
-   NEXT_PUBLIC_SUPABASE_URL="your-supabase-url"
-   NEXT_PUBLIC_SUPABASE_ANON_KEY="your-supabase-anon-key"
-   SUPABASE_SERVICE_ROLE_KEY="your-service-role-key"
+   # Feature Flags
+   FEATURE_MAERSK=true
+   FEATURE_DEADLINES=true
+   
+   # Cache Configuration
+   CACHE_TTL_MINUTES=10
    ```
 
 4. **Настройте базу данных**
@@ -98,7 +104,10 @@ SprutNet - это MVP планировщик морских перевозок, 
    pnpm dev
    ```
 
-6. **Откройте браузер**
+6. **Проверьте статус Maersk API**
+   Откройте [http://localhost:3000/maersk-status](http://localhost:3000/maersk-status) для проверки доступа к API
+
+7. **Откройте браузер**
    ```
    http://localhost:3000
    ```
