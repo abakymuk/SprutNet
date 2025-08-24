@@ -38,6 +38,10 @@ export interface Sailing {
   rates: Rate[];
   /** Дедлайны */
   deadlines: Deadline[];
+  /** Время транзита (дни) */
+  transitTime?: number;
+  /** Задержка (дни) */
+  delay?: number;
   /** Дата создания записи */
   createdAt: Date;
   /** Дата последнего обновления */

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SearchForm } from "@/components/planner/SearchForm";
 import { SailingResults } from "@/components/planner/SailingResults";
+import { LaneInsights } from "@/components/planner/lane-insights";
 import type { PortRef, Sailing } from "@sprutnet/shared/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ import {
   CheckCircle,
   Info,
   ArrowLeft,
+  BarChart3,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -28,6 +30,11 @@ export default function PlannerPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedOriginPort, setSelectedOriginPort] = useState<PortRef | null>(
+    null
+  );
+  const [selectedDestinationPort, setSelectedDestinationPort] =
+    useState<PortRef | null>(null);
 
   const handleSearch = async (
     originPort: PortRef | null,
@@ -44,6 +51,8 @@ export default function PlannerPage() {
     setIsLoading(true);
     setError(null);
     setHasSearched(true);
+    setSelectedOriginPort(originPort);
+    setSelectedDestinationPort(destinationPort);
 
     try {
       const params = new URLSearchParams({
@@ -123,10 +132,14 @@ export default function PlannerPage() {
 
         {/* Main Content */}
         <Tabs defaultValue="search" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="search" className="flex items-center gap-2">
               <MapPin className="h-4 w-4" />
               Поиск рейсов
+            </TabsTrigger>
+            <TabsTrigger value="insights" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Аналитика
             </TabsTrigger>
             <TabsTrigger value="results" className="flex items-center gap-2">
               <Ship className="h-4 w-4" />
@@ -170,6 +183,14 @@ export default function PlannerPage() {
                 </CardContent>
               </Card>
             )}
+          </TabsContent>
+
+          <TabsContent value="insights" className="space-y-6">
+            <LaneInsights
+              sailings={searchResults}
+              originPort={selectedOriginPort?.name}
+              destinationPort={selectedDestinationPort?.name}
+            />
           </TabsContent>
 
           <TabsContent value="results" className="space-y-6">

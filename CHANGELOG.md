@@ -75,6 +75,31 @@
 
 ---
 
+## [1.0.2] - 2024-12-19
+
+### 🔧 Исправлено
+- **Исправлена конфигурация Vercel для API routes** - исправлен паттерн в vercel.json для корректного поиска API routes
+- **Деплой на Vercel** теперь работает без ошибок "unmatched function pattern"
+- **Мониторинг API** обновлен для проверки всех endpoints
+
+### 🛠 Техническое
+- Исправлен паттерн functions в `vercel.json`: `apps/web/src/app/api/**/route.ts`
+- Обновлен `.github/workflows/monitoring.yml` для проверки всех API endpoints
+- Добавлена проверка `/api/schedules` и `/api/ports/search`
+
+---
+
+## [1.0.1] - 2024-12-19
+
+### 🔧 Исправлено
+- **Исправлена ошибка деплоя на Vercel** - добавлен флаг `--prod` в команду Vercel Build для устранения несоответствия окружений между build и deploy этапами
+- **Production деплой** теперь работает корректно без ошибок environment mismatch
+
+### 🛠 Техническое
+- Обновлен `.github/workflows/deploy-production.yml` для корректной работы с production окружением
+
+---
+
 ## [Unreleased]
 
 ### Планируется
