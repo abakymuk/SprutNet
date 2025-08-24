@@ -22,12 +22,15 @@ export async function GET(request: Request) {
     const useMaerskAPI = process.env.FEATURE_MAERSK === 'true';
 
     if (useMaerskAPI && vesselImo && voyage && portOfLoad && isoCountryCode) {
+      // Нормализуем voyage до 4 символов для Maersk API
+      const normalizedVoyage = voyage.replace(/[^A-Z0-9]/g, '').substring(0, 4).padEnd(4, '0');
+      
       // Сначала валидируем параметры
       const maerskParams: MaerskDeadlineSearchParams = {
         ISOCountryCode: isoCountryCode,
         portOfLoad,
         vesselIMONumber: vesselImo,
-        voyage,
+        voyage: normalizedVoyage,
         limit: 50,
       };
 

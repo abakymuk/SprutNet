@@ -228,8 +228,8 @@ export function validateDeadlineSearchParams(params: MaerskDeadlineSearchParams)
   
   if (!params.voyage) {
     errors.push('voyage is required');
-  } else if (!/^[A-Z0-9]{4}$/.test(params.voyage)) {
-    errors.push('voyage must be a 4-character alphanumeric string');
+  } else if (!/^[A-Z0-9]{1,4}$/.test(params.voyage)) {
+    errors.push('voyage must be 1-4 alphanumeric characters');
   }
   
   // Проверяем опциональные поля

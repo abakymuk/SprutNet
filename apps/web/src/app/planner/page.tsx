@@ -28,6 +28,10 @@ import { useSearchContext } from "@/contexts/search-context";
 
 export default function PlannerPage() {
   const { searchState, setSearchResults } = useSearchContext();
+  const [dataSource, setDataSource] = useState<
+    "maersk" | "mock" | "mock (fallback)"
+  >("maersk");
+  const [apiError, setApiError] = useState<string | undefined>();
   const { searchResults, originPort, destinationPort } = searchState;
 
   const [isLoading, setIsLoading] = useState(false);
@@ -134,10 +138,20 @@ export default function PlannerPage() {
       const data = await response.json();
       console.log("📥 Received data from API:", data);
       console.log("📊 Sailings count:", data.sailings?.length || 0);
+
+      // Обновляем источник данных
+      setDataSource(data.source || "maersk");
+      setApiError(undefined);
       setSearchResults(data.sailings || []);
     } catch (error) {
       console.error("Error searching schedules:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Произошла ошибка при поиске рейсов";
       setError("Произошла ошибка при поиске рейсов. Попробуйте еще раз.");
+      setApiError(errorMessage);
+      setDataSource("mock (fallback)");
       setSearchResults([]);
     } finally {
       setIsLoading(false);
@@ -265,6 +279,12 @@ export default function PlannerPage() {
                   sailings={searchResults || []}
                   isLoading={isLoading}
                   hasSearched={hasSearched}
+                  dataSource={dataSource}
+                  error={apiError}
+                  onSwitchToMock={() => {
+                    setDataSource("mock");
+                    setApiError(undefined);
+                  }}
                 />
               </CardContent>
             </Card>

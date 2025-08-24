@@ -79,6 +79,7 @@ import { differenceInDays } from "date-fns";
 import type { Sailing } from "@sprutnet/shared/types";
 import { DeadlinesModal } from "./deadlines-modal";
 import { VesselCard } from "./vessel-card";
+import { FallbackButton } from "@/components/ui/fallback-button";
 import { ResultsSkeleton } from "./results-skeleton";
 import { ErrorState, EmptyState } from "./error-states";
 
@@ -86,6 +87,9 @@ interface SailingResultsProps {
   sailings: Sailing[];
   isLoading: boolean;
   hasSearched: boolean;
+  dataSource?: "maersk" | "mock" | "mock (fallback)";
+  error?: string;
+  onSwitchToMock?: () => void;
 }
 
 type SortOption = "earliest" | "shortest" | "best" | "cheapest" | "popular";
@@ -168,6 +172,9 @@ export function SailingResults({
   sailings,
   isLoading,
   hasSearched,
+  dataSource = "maersk",
+  error,
+  onSwitchToMock,
 }: SailingResultsProps) {
   const [sortBy, setSortBy] = useState<SortOption>("earliest");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
@@ -253,14 +260,16 @@ export function SailingResults({
   // Determine best sailings for highlighting
   const earliestSailing = filteredSailings[0];
   const shortestSailing = [...filteredSailings].sort(
-    (a, b) => a.route.duration - b.route.duration
+    (a, b) => new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime()
   )[0];
   const cheapestSailing = [...filteredSailings].sort(
-    (a, b) => (a.rates[0]?.totalCost || 0) - (b.rates[0]?.totalCost || 0)
+    (a, b) => (new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime())
   )[0];
-  const bestSailing = filteredSailings[0]; // Already sorted by best
+  const bestSailing = [...filteredSailings].sort(
+    (a, b) => (new Date(a.departureDate).getTime() - new Date(b.departureDate).getTime())
+  )[0];
 
-  const getSailingBadge = (sailing: Sailing) => {
+  const getSailingBadge = (sailing: Sailing): { label?: string; icon: React.ElementType; variant: "default" | "secondary" | "outline" } | null => {
     if (sailing.id === earliestSailing?.id && sortBy === "earliest") {
       return {
         label: "Самый ранний",
@@ -271,13 +280,20 @@ export function SailingResults({
     if (sailing.id === shortestSailing?.id && sortBy === "shortest") {
       return {
         label: "Самый быстрый",
-        icon: Zap,
-        variant: "secondary" as const,
+        icon: Calendar,
+        variant: "default" as const,
       };
     }
     if (sailing.id === cheapestSailing?.id && sortBy === "cheapest") {
       return {
-        label: "Самый дешевый",
+        label: "Самый быстрый",
+        icon: Zap,              
+        variant: "default" as const,
+      };
+    }
+    if (sailing.id === popularSailing?.id && sortBy === "popular") {
+      return {
+        label: "Лучший выбор",
         icon: DollarSign,
         variant: "outline" as const,
       };
@@ -468,6 +484,12 @@ export function SailingResults({
                 </div>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <FallbackButton
+              dataSource={dataSource}
+              onSwitchToMock={onSwitchToMock}
+              error={error}
+            />
           </div>
         </div>
 
@@ -490,7 +512,7 @@ export function SailingResults({
               {filteredSailings.map((sailing) => {
                 const badge = getSailingBadge(sailing);
                 const transitDays = calculateTransitDays(
-                  sailing.departureDate,
+                  new Date(sailing.departureDate),
                   sailing.arrivalDate
                 );
                 const mainRate = sailing.rates[0];
@@ -622,7 +644,7 @@ export function SailingResults({
               const badge = getSailingBadge(sailing);
               const transitDays = calculateTransitDays(
                 sailing.departureDate,
-                sailing.arrivalDate
+                new Date(sailing.arrivalDate)
               );
               const mainRate = sailing.rates[0];
 
@@ -639,7 +661,7 @@ export function SailingResults({
                             <Ship className="h-5 w-5 text-primary" />
                             {sailing.carrierName} - {sailing.voyageNumber}
                           </CardTitle>
-                          <VesselCard imo={sailing.vessel.imoNumber}>
+                          <VesselCard imo={sailing.vessel.imo}>
                             <Button
                               variant="ghost"
                               size="sm"

@@ -154,7 +154,12 @@ export function DeadlinesModal({ sailing, children }: DeadlinesModalProps) {
         params.append("vesselImo", sailing.vessel.imoNumber);
       }
       if (sailing.voyageNumber) {
-        params.append("voyage", sailing.voyageNumber);
+        // Нормализуем voyage до 4 символов для Maersk API
+        const normalizedVoyage = sailing.voyageNumber
+          .replace(/[^A-Z0-9]/g, "")
+          .substring(0, 4)
+          .padEnd(4, "0");
+        params.append("voyage", normalizedVoyage);
       }
       if (sailing.originPort?.name) {
         params.append("portOfLoad", sailing.originPort.name);
