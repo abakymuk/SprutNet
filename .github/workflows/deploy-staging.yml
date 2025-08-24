@@ -57,9 +57,10 @@ jobs:
           echo "  VERCEL_ORG_ID: ${VERCEL_ORG_ID:+SET}"
           echo "  VERCEL_PROJECT_ID: ${VERCEL_PROJECT_ID:+SET}"
           echo "🔧 Generating Prisma client..."
-          pnpm --filter web exec prisma generate
+          cd apps/web
+          npx prisma generate --schema=../../prisma/schema.prisma
           echo "🚀 Running build..."
-          pnpm --filter web build || (echo "❌ Build failed with exit code $?" && exit 1)
+          pnpm build || (echo "❌ Build failed with exit code $?" && exit 1)
           echo "✅ Build completed successfully!"
           
       - name: Deploy to Vercel (Staging)
