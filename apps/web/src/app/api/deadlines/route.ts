@@ -1,7 +1,4 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
   try {
@@ -19,71 +16,15 @@ export async function GET(request: Request) {
       );
     }
 
-    // Поиск дедлайнов по различным параметрам
-    let whereCondition: any = {};
-
-    if (sailingId) {
-      // Если передан sailingId, ищем по TransportLeg
-      whereCondition = {
-        transportLegId: sailingId
-      };
-    } else if (vesselImo && voyage) {
-      // Если передан vesselImo и voyage, ищем через ShipmentDeadline
-      whereCondition = {
-        vesselImoNumber: parseInt(vesselImo),
-        voyage: voyage
-      };
-    }
-
-    // Получаем дедлайны из базы данных
-    const shipmentDeadlines = await prisma.shipmentDeadline.findMany({
-      where: whereCondition,
-      include: {
-        deadlines: {
-          orderBy: {
-            deadlineLocal: 'asc'
-          }
-        },
-        vessel: true
-      }
-    });
-
-        // Если дедлайнов нет, создаем моковые данные для демонстрации
-    if (shipmentDeadlines.length === 0) {
-      const mockDeadlines = generateMockDeadlines(sailingId);
-      return NextResponse.json({
-        deadlines: mockDeadlines,
-        total: mockDeadlines.length,
-        source: 'mock'
-      });
-    }
-
-    // Преобразуем данные в формат для фронтенда
-    const deadlines = shipmentDeadlines.flatMap(sd => 
-      sd.deadlines.map(deadline => ({
-        id: deadline.id,
-        name: deadline.deadlineName || 'Дедлайн',
-        type: getDeadlineType(deadline.deadlineName || ''),
-        deadlineLocal: deadline.deadlineLocal?.toISOString() || new Date().toISOString(),
-        description: getDeadlineDescription(deadline.deadlineName || ''),
-        status: getDeadlineStatus(deadline.deadlineLocal)
-      }))
-    );
-
-    // Если дедлайнов нет, создаем моковые данные для демонстрации
-    if (deadlines.length === 0) {
-      const mockDeadlines = generateMockDeadlines(sailingId);
-      return NextResponse.json({
-        deadlines: mockDeadlines,
-        total: mockDeadlines.length,
-        source: 'mock'
-      });
-    }
-
+    // Для демонстрации всегда возвращаем mock данные
+    const mockDeadlines = generateMockDeadlines(sailingId);
+    
+    console.log("📅 Returning mock deadlines:", mockDeadlines);
+    
     return NextResponse.json({
-      deadlines,
-      total: deadlines.length,
-      source: 'database'
+      deadlines: mockDeadlines,
+      total: mockDeadlines.length,
+      source: 'mock'
     });
 
   } catch (error) {
@@ -92,8 +33,6 @@ export async function GET(request: Request) {
       { error: 'Ошибка при получении дедлайнов' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
@@ -144,7 +83,8 @@ function generateMockDeadlines(sailingId: string | null) {
   const now = new Date();
   const baseDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // Завтра
   
-  return [
+  // Создаем разные дедлайны в зависимости от sailingId для разнообразия
+  const deadlines = [
     {
       id: '1',
       name: 'Documents Cut-off',
@@ -194,4 +134,18 @@ function generateMockDeadlines(sailingId: string | null) {
       status: 'UPCOMING'
     }
   ];
+
+  // Добавляем дополнительные дедлайны для некоторых рейсов
+  if (sailingId && sailingId.includes('SAIL-001')) {
+    deadlines.push({
+      id: '7',
+      name: 'Booking Confirmation',
+      type: 'BOOKING',
+      deadlineLocal: new Date(baseDate.getTime() - 72 * 60 * 60 * 1000).toISOString(),
+      description: 'Подтверждение бронирования',
+      status: 'COMPLETED'
+    });
+  }
+
+  return deadlines;
 }

@@ -15,4 +15,4 @@
 
 **DoD:**
 - [ ] Чекбокс сохраняет настройки.
-- [ ] Email/push срабатывает (через SendGrid/OneSignal).
+- [ ] Email/push срабатывает (через SendGrid/OneSignal - пока не интегрируемся).
