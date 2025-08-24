@@ -11,19 +11,19 @@ import { Ship, MapPin, Calendar, Clock } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="flex justify-center mb-6">
-            <div className="p-4 bg-blue-600 rounded-full">
-              <Ship className="h-12 w-12 text-white" />
+            <div className="p-4 bg-primary rounded-full">
+              <Ship className="h-12 w-12 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+          <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
             SprutNet
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Планировщик морских перевозок нового поколения. Найдите оптимальные
             маршруты для ваших грузов с помощью AI-технологий.
           </p>
@@ -43,7 +43,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Features Section */}
+        {/* Features Grid */}
         <div className="grid md:grid-cols-3 gap-8 mb-16">
           <Card className="text-center">
             <CardHeader>
@@ -92,10 +92,10 @@ export default function HomePage() {
         <div className="text-center">
           <Card className="max-w-2xl mx-auto">
             <CardContent className="pt-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              <h2 className="text-2xl font-bold text-foreground mb-4">
                 Готовы оптимизировать ваши перевозки?
               </h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-muted-foreground mb-6">
                 Присоединяйтесь к тысячам компаний, которые уже используют
                 SprutNet для планирования морских перевозок.
               </p>

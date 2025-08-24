@@ -36,7 +36,7 @@ export function SailingResults({
 }: SailingResultsProps) {
   const [sortBy, setSortBy] = useState<SortOption>("earliest");
 
-  // Сортировка и подсветка рейсов
+  // Sorting logic
   const sortedSailings = useMemo(() => {
     if (!sailings.length) return [];
 
@@ -50,7 +50,7 @@ export function SailingResults({
         case "shortest":
           return a.route.duration - b.route.duration;
         case "best":
-          // Лучший рейс: баланс между скоростью и стоимостью
+          // Best sailing: balance between speed and cost
           const aScore =
             a.route.duration * 0.6 + (a.rates[0]?.totalCost || 0) * 0.4;
           const bScore =
@@ -64,12 +64,12 @@ export function SailingResults({
     return sorted;
   }, [sailings, sortBy]);
 
-  // Определяем лучшие рейсы для подсветки
+  // Determine best sailings for highlighting
   const earliestSailing = sortedSailings[0];
   const shortestSailing = [...sailings].sort(
     (a, b) => a.route.duration - b.route.duration
   )[0];
-  const bestSailing = sortedSailings[0]; // Уже отсортирован по лучшему
+  const bestSailing = sortedSailings[0]; // Already sorted by best
 
   const getSailingBadge = (sailing: Sailing) => {
     if (sailing.id === earliestSailing?.id && sortBy === "earliest") {
@@ -100,8 +100,8 @@ export function SailingResults({
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Поиск рейсов...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+          <p className="text-muted-foreground">Поиск рейсов...</p>
         </div>
       </div>
     );
@@ -110,11 +110,11 @@ export function SailingResults({
   if (!hasSearched) {
     return (
       <div className="text-center py-12">
-        <Ship className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <Ship className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+        <h3 className="text-lg font-medium text-foreground mb-2">
           Начните поиск рейсов
         </h3>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Выберите порты отправления и назначения, чтобы найти доступные рейсы
         </p>
       </div>
@@ -124,11 +124,11 @@ export function SailingResults({
   if (sailings.length === 0) {
     return (
       <div className="text-center py-12">
-        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">
+        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+        <h3 className="text-lg font-medium text-foreground mb-2">
           Рейсы не найдены
         </h3>
-        <p className="text-gray-600">
+        <p className="text-muted-foreground">
           Попробуйте изменить параметры поиска или даты
         </p>
       </div>
@@ -140,10 +140,10 @@ export function SailingResults({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900">
+          <h2 className="text-xl font-semibold text-foreground">
             Найдено рейсов: {sailings.length}
           </h2>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Выберите подходящий рейс для вашего груза
           </p>
         </div>
@@ -211,55 +211,31 @@ export function SailingResults({
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
-                        <Ship className="h-4 w-4" />
-                        {sailing.vessel.name}
+                        <MapPin className="h-4 w-4" />
+                        <span>
+                          {sailing.originPort.name} →{" "}
+                          {sailing.destinationPort.name}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Target className="h-4 w-4" />
-                        {sailing.route.name}
+                        <Clock className="h-4 w-4" />
+                        <span>{sailing.route.duration} дней</span>
                       </div>
                     </div>
                   </div>
-                  {mainRate && (
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-green-600">
-                        ${mainRate.totalCost.toLocaleString()}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {mainRate.containerType}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </CardHeader>
 
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Route Info */}
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900">Маршрут</h4>
-                    <div className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Schedule Information */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-foreground">Расписание</h4>
+                    <div className="space-y-3">
                       <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-blue-600" />
-                        <span className="font-medium">Отправление:</span>
-                        <span>{sailing.originPort.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-4 w-4 text-green-600" />
-                        <span className="font-medium">Назначение:</span>
-                        <span>{sailing.destinationPort.name}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Schedule Info */}
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900">Расписание</h4>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-blue-600" />
+                        <Calendar className="h-4 w-4 text-primary" />
                         <span className="font-medium">ETD:</span>
                         <span>
                           {format(
@@ -270,7 +246,7 @@ export function SailingResults({
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-green-600" />
+                        <Calendar className="h-4 w-4 text-primary" />
                         <span className="font-medium">ETA:</span>
                         <span>
                           {format(new Date(sailing.arrivalDate), "dd.MM.yyyy", {
@@ -279,32 +255,34 @@ export function SailingResults({
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4 text-orange-600" />
-                        <span className="font-medium">В пути:</span>
+                        <Clock className="h-4 w-4 text-primary" />
+                        <span className="font-medium">Время в пути:</span>
                         <span>{transitDays} дней</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Vessel Info */}
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-gray-900">Судно</h4>
-                    <div className="space-y-2">
+                  {/* Vessel Information */}
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-foreground">
+                      Информация о судне
+                    </h4>
+                    <div className="space-y-3">
                       <div className="text-sm">
                         <span className="font-medium">Название:</span>
-                        <div className="text-gray-600">
+                        <div className="text-muted-foreground">
                           {sailing.vessel.name}
                         </div>
                       </div>
                       <div className="text-sm">
                         <span className="font-medium">IMO:</span>
-                        <div className="text-gray-600">
+                        <div className="text-muted-foreground">
                           {sailing.vessel.imoNumber}
                         </div>
                       </div>
                       <div className="text-sm">
                         <span className="font-medium">Вместимость:</span>
-                        <div className="text-gray-600">
+                        <div className="text-muted-foreground">
                           {sailing.vessel.capacity.toLocaleString()} TEU
                         </div>
                       </div>
@@ -312,13 +290,28 @@ export function SailingResults({
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 mt-6 pt-4 border-t">
-                  <Button variant="outline" className="flex-1">
-                    Подробнее
-                  </Button>
-                  <Button className="flex-1">Выбрать рейс</Button>
-                </div>
+                {/* Rate Information */}
+                {mainRate && (
+                  <div className="mt-6 p-4 bg-muted rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-foreground">
+                          {mainRate.containerType} - $
+                          {mainRate.totalCost.toLocaleString()}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {mainRate.currency} • {sailing.route.duration} дней
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">
+                          Подробнее
+                        </Button>
+                        <Button className="flex-1">Выбрать рейс</Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           );

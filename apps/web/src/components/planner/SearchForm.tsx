@@ -2,21 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { CalendarIcon, Search, Ship, MapPin } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -50,57 +38,51 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
   const [isOriginOpen, setIsOriginOpen] = useState(false);
   const [isDestinationOpen, setIsDestinationOpen] = useState(false);
 
-  // Поиск портов отправления
+  // Debounced port search for origin
   useEffect(() => {
-    const searchOriginPorts = async () => {
-      if (originSearchQuery.length < 2) {
-        setOriginPorts([]);
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          `/api/ports/search?query=${encodeURIComponent(originSearchQuery)}&limit=10`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setOriginPorts(data.ports || []);
-        }
-      } catch (error) {
-        console.error("Error searching origin ports:", error);
+    const timeoutId = setTimeout(() => {
+      if (originSearchQuery.trim()) {
+        searchPorts(originSearchQuery, setOriginPorts);
+      } else {
         setOriginPorts([]);
       }
-    };
+    }, 300);
 
-    const timeoutId = setTimeout(searchOriginPorts, 300);
     return () => clearTimeout(timeoutId);
   }, [originSearchQuery]);
 
-  // Поиск портов назначения
+  // Debounced port search for destination
   useEffect(() => {
-    const searchDestinationPorts = async () => {
-      if (destinationSearchQuery.length < 2) {
-        setDestinationPorts([]);
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          `/api/ports/search?query=${encodeURIComponent(destinationSearchQuery)}&limit=10`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setDestinationPorts(data.ports || []);
-        }
-      } catch (error) {
-        console.error("Error searching destination ports:", error);
+    const timeoutId = setTimeout(() => {
+      if (destinationSearchQuery.trim()) {
+        searchPorts(destinationSearchQuery, setDestinationPorts);
+      } else {
         setDestinationPorts([]);
       }
-    };
+    }, 300);
 
-    const timeoutId = setTimeout(searchDestinationPorts, 300);
     return () => clearTimeout(timeoutId);
   }, [destinationSearchQuery]);
+
+  const searchPorts = async (query: string, setPorts: (ports: PortRef[]) => void) => {
+    try {
+      const params = new URLSearchParams({
+        query: query.trim(),
+        limit: "10",
+      });
+
+      const response = await fetch(`/api/ports/search?${params}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch ports");
+      }
+
+      const data = await response.json();
+      setPorts(data.ports || []);
+    } catch (error) {
+      console.error("Error searching ports:", error);
+      setPorts([]);
+    }
+  };
 
   const handleSearch = () => {
     onSearch(
@@ -118,7 +100,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Port of Loading */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <label className="text-sm font-medium text-foreground flex items-center gap-2">
             <MapPin className="h-4 w-4" />
             Port of Loading (POL)
           </label>
@@ -164,7 +146,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                       >
                         <div className="flex flex-col">
                           <span className="font-medium">{port.name}</span>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-muted-foreground">
                             {port.cityName}, {port.countryName}
                           </span>
                         </div>
@@ -179,7 +161,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
 
         {/* Port of Discharge */}
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <label className="text-sm font-medium text-foreground flex items-center gap-2">
             <Ship className="h-4 w-4" />
             Port of Discharge (POD)
           </label>
@@ -225,7 +207,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                       >
                         <div className="flex flex-col">
                           <span className="font-medium">{port.name}</span>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-muted-foreground">
                             {port.cityName}, {port.countryName}
                           </span>
                         </div>
@@ -242,7 +224,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
       {/* Date Range */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-foreground">
             Дата отправления от
           </label>
           <Popover>
@@ -273,7 +255,7 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700">
+          <label className="text-sm font-medium text-foreground">
             Дата отправления до
           </label>
           <Popover>
