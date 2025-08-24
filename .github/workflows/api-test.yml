@@ -178,73 +178,127 @@ jobs:
           node -e "
           const https = require('node:https');
           
-          const params = new URLSearchParams({
-            collectionOriginCountryCode: 'US',
-            collectionOriginCityName: 'Houston',
-            deliveryDestinationCountryCode: 'NL',
-            deliveryDestinationCityName: 'Rotterdam',
-            vesselOperatorCarrierCode: 'MAEU',
-            cargoType: 'DRY',
-            ISOEquipmentCode: '42G1',
-            stuffingWeight: '18000',
-            weightMeasurementUnit: 'KGS',
-            stuffingVolume: '10',
-            volumeMeasurementUnit: 'MTQ',
-            exportServiceMode: 'CY',
-            importServiceMode: 'CY',
-            startDateType: 'D',
-            dateRange: 'P4W'
-          });
+          // Helper function to make HTTP requests
+          function makeRequest(hostname, path, headers) {
+            return new Promise((resolve, reject) => {
+              const options = { hostname, port: 443, path, method: 'GET', headers };
+              const req = https.request(options, (res) => {
+                let data = '';
+                res.on('data', (chunk) => data += chunk);
+                res.on('end', () => resolve({ status: res.statusCode, data }));
+              });
+              req.on('error', reject);
+              req.setTimeout(10000, () => {
+                req.destroy();
+                reject(new Error('Request timeout'));
+              });
+              req.end();
+            });
+          }
           
-          const options = {
-            hostname: 'api.maersk.com',
-            port: 443,
-            path: '/products/ocean-products?' + params.toString(),
-            method: 'GET',
-            headers: {
+          // Get Houston carrierCityGeoID
+          async function getHoustonGeoID() {
+            console.log('🔍 Getting Houston carrierCityGeoID...');
+            const headers = {
               'Accept': 'application/json',
               'Content-Type': 'application/json',
               'Consumer-Key': process.env.MAERSK_API_KEY,
               'User-Agent': 'SprutNet/1.0'
+            };
+            
+            const response = await makeRequest('api.maersk.com', '/reference-data/locations?countryCode=US&cityName=Houston&limit=10', headers);
+            console.log('📊 Houston Locations API Status:', response.status);
+            
+            if (response.status === 200) {
+              const locations = JSON.parse(response.data);
+              const houston = locations.find(loc => loc.cityName === 'Houston' && loc.countryCode === 'US');
+              if (houston) {
+                console.log('✅ Found Houston carrierCityGeoID:', houston.carrierGeoID);
+                return houston.carrierGeoID;
+              }
             }
-          };
+            throw new Error('Could not find Houston carrierCityGeoID');
+          }
           
-          console.log('🌐 Request URL:', 'https://' + options.hostname + options.path);
+          // Get Rotterdam carrierCityGeoID
+          async function getRotterdamGeoID() {
+            console.log('🔍 Getting Rotterdam carrierCityGeoID...');
+            const headers = {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'Consumer-Key': process.env.MAERSK_API_KEY,
+              'User-Agent': 'SprutNet/1.0'
+            };
+            
+            const response = await makeRequest('api.maersk.com', '/reference-data/locations?countryCode=NL&cityName=Rotterdam&limit=10', headers);
+            console.log('📊 Rotterdam Locations API Status:', response.status);
+            
+            if (response.status === 200) {
+              const locations = JSON.parse(response.data);
+              const rotterdam = locations.find(loc => loc.cityName === 'Rotterdam' && loc.countryCode === 'NL');
+              if (rotterdam) {
+                console.log('✅ Found Rotterdam carrierCityGeoID:', rotterdam.carrierGeoID);
+                return rotterdam.carrierGeoID;
+              }
+            }
+            throw new Error('Could not find Rotterdam carrierCityGeoID');
+          }
           
-          const req = https.request(options, (res) => {
-            console.log('📊 Response Status:', res.statusCode);
-            
-            let data = '';
-            res.on('data', (chunk) => {
-              data += chunk;
-            });
-            
-            res.on('end', () => {
-              console.log('📄 Response Body:', data.substring(0, 500) + '...');
+          // Test Ocean Products API with correct GeoIDs
+          async function testOceanProductsAPI() {
+            try {
+              console.log('🚀 Starting Ocean Products API test...');
               
-              if (res.statusCode === 200) {
+              // Get GeoIDs first
+              const houstonGeoID = await getHoustonGeoID();
+              const rotterdamGeoID = await getRotterdamGeoID();
+              
+              // Build Ocean Products API request with correct GeoIDs
+              const params = new URLSearchParams({
+                carrierCollectionOriginGeoID: houstonGeoID,
+                carrierDeliveryDestinationGeoID: rotterdamGeoID,
+                vesselOperatorCarrierCode: 'MAEU',
+                cargoType: 'DRY',
+                ISOEquipmentCode: '42G1',
+                stuffingWeight: '18000',
+                weightMeasurementUnit: 'KGS',
+                stuffingVolume: '10',
+                volumeMeasurementUnit: 'MTQ',
+                exportServiceMode: 'CY',
+                importServiceMode: 'CY',
+                startDateType: 'D',
+                dateRange: 'P4W'
+              });
+              
+              const headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'Consumer-Key': process.env.MAERSK_API_KEY,
+                'User-Agent': 'SprutNet/1.0'
+              };
+              
+              console.log('🌐 Ocean Products Request URL:', 'https://api.maersk.com/products/ocean-products?' + params.toString());
+              
+              const response = await makeRequest('api.maersk.com', '/products/ocean-products?' + params.toString(), headers);
+              console.log('📊 Ocean Products API Status:', response.status);
+              console.log('📄 Response Body:', response.data.substring(0, 500) + '...');
+              
+              if (response.status === 200) {
                 console.log('✅ Ocean Products API is working');
                 process.exit(0);
               } else {
-                console.log('❌ Ocean Products API failed with status:', res.statusCode);
-                console.log('❌ Error details:', data);
+                console.log('❌ Ocean Products API failed with status:', response.status);
+                console.log('❌ Error details:', response.data);
                 process.exit(1);
               }
-            });
-          });
+            } catch (error) {
+              console.error('❌ Error:', error.message);
+              process.exit(1);
+            }
+          }
           
-          req.on('error', (e) => {
-            console.error('❌ Network Error:', e.message);
-            process.exit(1);
-          });
-          
-          req.setTimeout(10000, () => {
-            console.error('❌ Request timeout');
-            req.destroy();
-            process.exit(1);
-          });
-          
-          req.end();
+          // Run the test
+          testOceanProductsAPI();
           "
         env:
           MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
