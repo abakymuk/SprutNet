@@ -109,6 +109,26 @@ jobs:
         run: pnpm test
         if: hashFiles('**/*.test.{js,ts,jsx,tsx}') != ''
         
+      - name: Generate Prisma Client for Build
+        run: |
+          echo "🔧 Generating Prisma client for build..."
+          echo "📁 Current directory: $(pwd)"
+          echo "🔍 Environment variables check:"
+          echo "  DATABASE_URL: ${DATABASE_URL:+SET}"
+          cd apps/web
+          echo "🔧 Running prisma generate in apps/web..."
+          npx prisma generate
+          echo "✅ Prisma client generated successfully"
+          
+      - name: Verify Prisma Client Generation
+        run: |
+          echo "🔍 Verifying Prisma client generation..."
+          echo "📁 Checking apps/web/node_modules/.prisma/client:"
+          ls -la apps/web/node_modules/.prisma/client/ || echo "❌ Prisma client directory not found"
+          echo "📁 Checking apps/web/node_modules/@prisma/client:"
+          ls -la apps/web/node_modules/@prisma/client/ || echo "❌ @prisma/client directory not found"
+          echo "✅ Prisma client verification completed"
+        
       - name: Build
         run: |
           echo "🔧 Starting build process..."
