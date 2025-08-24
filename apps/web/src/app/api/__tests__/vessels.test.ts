@@ -56,7 +56,7 @@ describe('/api/vessels/[imo]', () => {
 
       (Maersk.fetch as any).mockResolvedValue(mockMaerskResponse);
 
-      const request = new Request('http://localhost:3000/api/vessels/1234567');
+      const request = new NextRequest('http://localhost:3000/api/vessels/1234567');
       const response = await GET(request, { params: { imo: '1234567' } });
       const data = await response.json();
 
@@ -90,7 +90,7 @@ describe('/api/vessels/[imo]', () => {
 
       (Maersk.fetch as any).mockResolvedValue(mockMaerskResponse);
 
-      const request = new Request('http://localhost:3000/api/vessels/1234567');
+      const request = new NextRequest('http://localhost:3000/api/vessels/1234567');
       const response = await GET(request, { params: { imo: '1234567' } });
       const data = await response.json();
 
@@ -101,7 +101,7 @@ describe('/api/vessels/[imo]', () => {
     it('должен возвращать fallback на mock данные при ошибке Maersk API', async () => {
       (Maersk.fetch as any).mockRejectedValue(new Error('API Error'));
 
-      const request = new Request('http://localhost:3000/api/vessels/1234567');
+      const request = new NextRequest('http://localhost:3000/api/vessels/1234567');
       const response = await GET(request, { params: { imo: '1234567' } });
       const data = await response.json();
 
@@ -114,7 +114,7 @@ describe('/api/vessels/[imo]', () => {
     it('должен использовать mock данные когда FEATURE_MAERSK=false', async () => {
       process.env.FEATURE_MAERSK = 'false';
 
-      const request = new Request('http://localhost:3000/api/vessels/1234567');
+      const request = new NextRequest('http://localhost:3000/api/vessels/1234567');
       const response = await GET(request, { params: { imo: '1234567' } });
       const data = await response.json();
 
@@ -133,7 +133,7 @@ describe('/api/vessels/[imo]', () => {
 
       (Maersk.fetch as any).mockResolvedValue(mockInvalidResponse);
 
-      const request = new Request('http://localhost:3000/api/vessels/1234567');
+      const request = new NextRequest('http://localhost:3000/api/vessels/1234567');
       const response = await GET(request, { params: { imo: '1234567' } });
       const data = await response.json();
 
