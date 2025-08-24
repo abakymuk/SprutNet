@@ -28,7 +28,7 @@ describe('/api/vessels/[imo]', () => {
   describe('GET', () => {
     it('должен возвращать ошибку валидации для неверного IMO', async () => {
       const request = new NextRequest('http://localhost:3000/api/vessels/123456');
-      const response = await GET(request, { params: { imo: '123456' } });
+      const response = await GET(request, { params: Promise.resolve({ imo: '123456' }) });
       const data = await response.json();
 
       expect(response.status).toBe(400);
@@ -57,7 +57,7 @@ describe('/api/vessels/[imo]', () => {
       (Maersk.fetch as any).mockResolvedValue(mockMaerskResponse);
 
       const request = new NextRequest('http://localhost:3000/api/vessels/1234567');
-      const response = await GET(request, { params: { imo: '1234567' } });
+      const response = await GET(request, { params: Promise.resolve({ imo: '1234567' }) });
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -91,7 +91,7 @@ describe('/api/vessels/[imo]', () => {
       (Maersk.fetch as any).mockResolvedValue(mockMaerskResponse);
 
       const request = new NextRequest('http://localhost:3000/api/vessels/1234567');
-      const response = await GET(request, { params: { imo: '1234567' } });
+      const response = await GET(request, { params: Promise.resolve({ imo: '1234567' }) });
       const data = await response.json();
 
       expect(response.status).toBe(404);
@@ -102,7 +102,7 @@ describe('/api/vessels/[imo]', () => {
       (Maersk.fetch as any).mockRejectedValue(new Error('API Error'));
 
       const request = new NextRequest('http://localhost:3000/api/vessels/1234567');
-      const response = await GET(request, { params: { imo: '1234567' } });
+      const response = await GET(request, { params: Promise.resolve({ imo: '1234567' }) });
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -115,7 +115,7 @@ describe('/api/vessels/[imo]', () => {
       process.env.FEATURE_MAERSK = 'false';
 
       const request = new NextRequest('http://localhost:3000/api/vessels/1234567');
-      const response = await GET(request, { params: { imo: '1234567' } });
+      const response = await GET(request, { params: Promise.resolve({ imo: '1234567' }) });
       const data = await response.json();
 
       expect(response.status).toBe(200);
@@ -134,7 +134,7 @@ describe('/api/vessels/[imo]', () => {
       (Maersk.fetch as any).mockResolvedValue(mockInvalidResponse);
 
       const request = new NextRequest('http://localhost:3000/api/vessels/1234567');
-      const response = await GET(request, { params: { imo: '1234567' } });
+      const response = await GET(request, { params: Promise.resolve({ imo: '1234567' }) });
       const data = await response.json();
 
       expect(response.status).toBe(200);
