@@ -1,0 +1,62 @@
+name: Auto Deploy to Production
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+env:
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+  MAERSK_API_KEY: ${{ secrets.MAERSK_API_KEY }}
+  MAERSK_API_SECRET: ${{ secrets.MAERSK_API_SECRET }}
+  MAERSK_API_BASE_URL: ${{ secrets.MAERSK_API_BASE_URL }}
+  DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+jobs:
+  auto-deploy:
+    name: Auto Deploy to Production
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    environment: production
+    timeout-minutes: 15
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '8'
+          
+      - name: Install dependencies
+        run: |
+          echo "📦 Installing dependencies..."
+          pnpm install
+          
+      - name: Build
+        run: |
+          echo "🔧 Building for production..."
+          pnpm build
+          
+      - name: Deploy to Vercel
+        run: |
+          echo "🚀 Deploying to Vercel..."
+          npx vercel --prod --token ${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          
+      - name: Notify deployment
+        run: |
+          echo "✅ Auto deployment completed!"
+          echo "Version: ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "URL: https://sprutnet.vercel.app"

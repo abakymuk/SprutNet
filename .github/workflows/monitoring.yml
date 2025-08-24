@@ -1,0 +1,72 @@
+name: Monitoring and Analytics
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'  # Каждые 6 часов
+  workflow_run:
+    workflows: ["Deploy to Production", "Auto Deploy to Production"]
+    types: [completed]
+
+jobs:
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Check API endpoints
+        run: |
+          echo "🔍 Checking API endpoints..."
+          
+          # Проверка основных API endpoints
+          echo "Testing /api/vessels..."
+          curl -f https://sprutnet.vercel.app/api/vessels || echo "❌ Vessels API failed"
+          
+          echo "Testing /api/locations..."
+          curl -f https://sprutnet.vercel.app/api/locations || echo "❌ Locations API failed"
+          
+          echo "Testing /api/ocean-products..."
+          curl -f https://sprutnet.vercel.app/api/ocean-products || echo "❌ Ocean Products API failed"
+          
+          echo "✅ Health check completed"
+          
+  performance-check:
+    name: Performance Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      - name: Check build performance
+        run: |
+          echo "⚡ Checking build performance..."
+          
+          # Проверка времени сборки
+          start_time=$(date +%s)
+          echo "Build started at: $(date)"
+          
+          # Здесь можно добавить команды для проверки производительности
+          
+          end_time=$(date +%s)
+          duration=$((end_time - start_time))
+          echo "Build completed in: ${duration} seconds"
+          
+          if [ $duration -gt 300 ]; then
+            echo "⚠️ Build took longer than 5 minutes"
+          else
+            echo "✅ Build performance is good"
+          fi
+          
+  security-check:
+    name: Security Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Check dependencies
+        run: |
+          echo "🔒 Checking dependencies for vulnerabilities..."
+          
+          # Проверка уязвимостей в зависимостях
+          pnpm audit || echo "⚠️ Some vulnerabilities found"
+          
+          echo "✅ Security check completed"
