@@ -60,16 +60,18 @@
 }
 
 @layer base {
+  * {
+    @apply border-border;
+  }
+  
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
   }
-  
-  .bg-background {
-    background-color: hsl(var(--background));
-  }
-  
-  .text-foreground {
-    color: hsl(var(--foreground));
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 }
