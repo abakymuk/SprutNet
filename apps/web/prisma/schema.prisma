@@ -14,3 +14,222 @@ datasource db {
 // Import all models from the root schema
 // The root schema is located at ../../prisma/schema.prisma
 // This file serves as a reference for the web app's Prisma client
+
+// Re-export all models from the root schema
+model Country {
+  id                String             @id @map("country_code") @db.VarChar(2)
+  countryName       String             @map("country_name") @db.VarChar(100)
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  locations         Location[]
+  shipmentDeadlines ShipmentDeadline[]
+  vessels           Vessel[]
+
+  @@map("countries")
+}
+
+model CarrierCode {
+  id            String         @id @map("carrier_code") @db.VarChar(4)
+  carrierName   String         @map("carrier_name") @db.VarChar(100)
+  description   String?
+  createdAt     DateTime?      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime?      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  oceanProducts OceanProduct[]
+
+  @@map("carrier_codes")
+}
+
+model TransportMode {
+  id          String      @id @map("mode_code") @db.VarChar(3)
+  modeName    String      @map("mode_name") @db.VarChar(50)
+  description String?
+  createdAt   DateTime?   @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime?   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transports  Transport[]
+  transportLegs TransportLeg[]
+
+  @@map("transport_modes")
+}
+
+model LocationType {
+  id          String     @id @map("type_code") @db.VarChar(50)
+  typeName    String     @map("type_name") @db.VarChar(50)
+  description String?
+  createdAt   DateTime?  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime?  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  locations   Location[]
+
+  @@map("location_types")
+}
+
+model Vessel {
+  id                Int                @id @map("vessel_imo_number")
+  carrierVesselCode String             @map("carrier_vessel_code") @db.VarChar(3)
+  vesselShortName   String?            @map("vessel_short_name") @db.VarChar(18)
+  vesselLongName    String?            @map("vessel_long_name") @db.VarChar(35)
+  vesselFlagCode    String?            @map("vessel_flag_code") @db.VarChar(2)
+  vessel_built_year Int?
+  vesselCallSign    String?            @map("vessel_call_sign") @db.VarChar(10)
+  vesselCapacityTeu Int?               @map("vessel_capacity_teu")
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  shipmentDeadlines ShipmentDeadline[]
+  transports        Transport[]
+  country           Country?           @relation(fields: [vesselFlagCode], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([carrierVesselCode], map: "idx_vessels_carrier_code")
+  @@index([id], map: "idx_vessels_imo_number")
+  @@map("vessels")
+}
+
+model Location {
+  id              String           @id @map("carrier_geo_id") @db.VarChar(13)
+  countryCode     String?          @map("country_code") @db.VarChar(2)
+  countryName     String?          @map("country_name") @db.VarChar(100)
+  unLocationCode  String?          @map("un_location_code") @db.VarChar(5)
+  cityName        String?          @map("city_name") @db.VarChar(100)
+  unRegionCode    String?          @map("un_region_code") @db.VarChar(3)
+  unRegionName    String?          @map("un_region_name") @db.VarChar(100)
+  locationType    String?          @map("location_type") @db.VarChar(50)
+  locationName    String?          @map("location_name") @db.VarChar(100)
+  createdAt       DateTime?        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime?        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  carrierLocation CarrierLocation?
+  country         Country?         @relation(fields: [countryCode], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  locationTypeRef LocationType?    @relation(fields: [locationType], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([id], map: "idx_locations_carrier_geo_id")
+  @@index([cityName], map: "idx_locations_city_name")
+  @@index([countryCode], map: "idx_locations_country_code")
+  @@map("locations")
+}
+
+model CarrierLocation {
+  id                  String    @id @map("carrier_geo_id") @db.VarChar(13)
+  carrierRktsCode     String?   @map("carrier_rkts_code") @db.VarChar(10)
+  carrierRkstCode     String?   @map("carrier_rkst_code") @db.VarChar(10)
+  timeZoneId          String?   @map("time_zone_id") @db.VarChar(50)
+  carrierCountryGeoId String?   @map("carrier_country_geo_id") @db.VarChar(13)
+  alternateAliases    String?   @map("alternate_aliases") @db.VarChar(500)
+  createdAt           DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  location            Location  @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("carrier_locations")
+}
+
+model OceanProduct {
+  id                String             @id @map("ocean_product_id") @db.VarChar(50)
+  carrierCode       String             @map("carrier_code") @db.VarChar(4)
+  productName       String             @map("product_name") @db.VarChar(100)
+  productType       String?            @map("product_type") @db.VarChar(50)
+  description       String?
+  isActive          Boolean            @default(true) @map("is_active")
+  createdAt         DateTime?          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transportSchedules TransportSchedule[]
+  carrierCodeRef    CarrierCode        @relation(fields: [carrierCode], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([carrierCode], map: "idx_ocean_products_carrier_code")
+  @@map("ocean_products")
+}
+
+model TransportSchedule {
+  id                String         @id @map("schedule_id") @db.VarChar(50)
+  oceanProductId    String         @map("ocean_product_id") @db.VarChar(50)
+  pol               String         @map("pol") @db.VarChar(13)
+  pod               String         @map("pod") @db.VarChar(13)
+  effectiveFrom     DateTime       @map("effective_from") @db.Timestamptz(6)
+  effectiveTo       DateTime?      @map("effective_to") @db.Timestamptz(6)
+  isActive          Boolean        @default(true) @map("is_active")
+  createdAt         DateTime?      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transportLegs     TransportLeg[]
+  oceanProduct      OceanProduct   @relation(fields: [oceanProductId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([oceanProductId], map: "idx_transport_schedules_ocean_product_id")
+  @@index([pol], map: "idx_transport_schedules_pol")
+  @@index([pod], map: "idx_transport_schedules_pod")
+  @@map("transport_schedules")
+}
+
+model TransportLeg {
+  id                String            @id @map("leg_id") @db.VarChar(50)
+  scheduleId        String            @map("schedule_id") @db.VarChar(50)
+  legSequence       Int               @map("leg_sequence")
+  transportMode     String            @map("transport_mode") @db.VarChar(3)
+  fromLocation      String            @map("from_location") @db.VarChar(13)
+  toLocation        String            @map("to_location") @db.VarChar(13)
+  estimatedDuration Int?              @map("estimated_duration")
+  createdAt         DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transports        Transport[]
+  transportSchedule TransportSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  transportModeRef  TransportMode     @relation(fields: [transportMode], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([scheduleId], map: "idx_transport_legs_schedule_id")
+  @@index([transportMode], map: "idx_transport_legs_transport_mode")
+  @@map("transport_legs")
+}
+
+model Transport {
+  id                String        @id @map("transport_id") @db.VarChar(50)
+  legId             String        @map("leg_id") @db.VarChar(50)
+  vesselId          Int?          @map("vessel_id")
+  departureTime     DateTime      @map("departure_time") @db.Timestamptz(6)
+  arrivalTime       DateTime      @map("arrival_time") @db.Timestamptz(6)
+  status            String        @default("SCHEDULED") @map("status") @db.VarChar(20)
+  createdAt         DateTime?     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?     @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  transportLeg      TransportLeg  @relation(fields: [legId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  vessel            Vessel?       @relation(fields: [vesselId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  transportMode     TransportMode @relation(fields: [transportModeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  transportModeId   String        @map("transport_mode_id") @db.VarChar(3)
+
+  @@index([legId], map: "idx_transports_leg_id")
+  @@index([vesselId], map: "idx_transports_vessel_id")
+  @@index([departureTime], map: "idx_transports_departure_time")
+  @@index([arrivalTime], map: "idx_transports_arrival_time")
+  @@index([transportModeId], map: "idx_transports_transport_mode_id")
+  @@map("transports")
+}
+
+model ShipmentDeadline {
+  id                String    @id @map("deadline_id") @db.VarChar(50)
+  transportId       String    @map("transport_id") @db.VarChar(50)
+  deadlineType      String    @map("deadline_type") @db.VarChar(50)
+  deadlineDateTime  DateTime  @map("deadline_date_time") @db.Timestamptz(6)
+  location          String?   @map("location") @db.VarChar(13)
+  description       String?
+  isActive          Boolean   @default(true) @map("is_active")
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deadlines         Deadline[]
+  vessel            Vessel    @relation(fields: [vesselId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  country           Country?  @relation(fields: [countryCode], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  vesselId          Int       @map("vessel_id")
+  countryCode       String?   @map("country_code") @db.VarChar(2)
+
+  @@index([transportId], map: "idx_shipment_deadlines_transport_id")
+  @@index([deadlineType], map: "idx_shipment_deadlines_deadline_type")
+  @@index([deadlineDateTime], map: "idx_shipment_deadlines_deadline_date_time")
+  @@map("shipment_deadlines")
+}
+
+model Deadline {
+  id                String           @id @map("deadline_id") @db.VarChar(50)
+  shipmentDeadlineId String          @map("shipment_deadline_id") @db.VarChar(50)
+  deadlineType      String           @map("deadline_type") @db.VarChar(50)
+  deadlineDateTime  DateTime         @map("deadline_date_time") @db.Timestamptz(6)
+  location          String?          @map("location") @db.VarChar(13)
+  description       String?
+  isActive          Boolean          @default(true) @map("is_active")
+  createdAt         DateTime?        @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?        @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  shipmentDeadline  ShipmentDeadline @relation(fields: [shipmentDeadlineId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([shipmentDeadlineId], map: "idx_deadlines_shipment_deadline_id")
+  @@index([deadlineType], map: "idx_deadlines_deadline_type")
+  @@index([deadlineDateTime], map: "idx_deadlines_deadline_date_time")
+  @@map("deadlines")
+}
