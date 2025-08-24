@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchSailings, getSailingById, getSailingsByCarrier } from '@sprutnet/shared/mocks';
 import type { SailingSearchQuery, SailingSearchResult } from '@sprutnet/shared/types';
+import { Maersk } from '@/lib/maersk';
+import { 
+  mapMaerskScheduleToSailing, 
+  validateScheduleSearchParams,
+  type MaerskScheduleSearchParams,
+  type MaerskScheduleResponse 
+} from '@/lib/types/schedules';
 
 /**
  * GET /api/schedules
@@ -28,12 +35,130 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Проверяем флаг для использования моков
-    // Временно используем мок-данные, пока Maersk API не полностью интегрирован
-    const useMocks = true; // process.env.FEATURE_MAERSK !== 'true';
+    // Проверяем флаг для использования Maersk API
+    const useMaerskAPI = process.env.FEATURE_MAERSK === 'true';
     
-    if (useMocks) {
+    if (useMaerskAPI) {
+      try {
+        console.log('🚢 Запрос к Maersk Schedules API:', { originPortId, destinationPortId, departureDateFrom, departureDateTo });
+        
+        // Подготавливаем параметры для Maersk API
+        const maerskParams: MaerskScheduleSearchParams = {
+          origin: originPortId,
+          destination: destinationPortId,
+          from: departureDateFrom ? departureDateFrom.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          to: departureDateTo ? departureDateTo.toISOString().split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          limit: limit + offset,
+        };
+        
+        // Валидируем параметры
+        const validationErrors = validateScheduleSearchParams(maerskParams);
+        if (validationErrors.length > 0) {
+          return NextResponse.json(
+            { error: `Validation errors: ${validationErrors.join(', ')}` },
+            { status: 400 }
+          );
+        }
+        
+        // Выполняем запрос к Maersk API
+        const queryParams = new URLSearchParams({
+          origin: maerskParams.origin,
+          destination: maerskParams.destination,
+          from: maerskParams.from,
+          to: maerskParams.to,
+          limit: maerskParams.limit?.toString() || '10',
+        });
+        
+        const maerskResponse = await Maersk.fetch(`/products/ocean-products?${queryParams}`, {
+          method: 'GET',
+          cache: true,
+          timeout: 15000,
+        });
+        
+        console.log('📊 Ответ от Maersk API:', maerskResponse);
+        
+        if (!maerskResponse.data || !Array.isArray(maerskResponse.data)) {
+          console.warn('⚠️ Неверный формат данных от Maersk API, используем fallback');
+          throw new Error('Invalid Maersk API response format');
+        }
+        
+        const maerskSchedules: any[] = maerskResponse.data;
+        console.log(`📈 Получено ${maerskSchedules.length} расписаний от Maersk API`);
+        
+        // Маппим данные в наш формат
+        const sailings = maerskSchedules.map((schedule: any) => {
+          // Получаем данные портов (можно кэшировать)
+          const originPort = {
+            id: schedule.originPort?.code || originPortId,
+            name: schedule.originPort?.name || 'Unknown Port',
+            countryCode: 'UN',
+            countryName: schedule.originPort?.country || 'Unknown',
+            cityName: schedule.originPort?.name || 'Unknown',
+            type: 'SEAPORT' as const,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          
+          const destinationPort = {
+            id: schedule.destinationPort?.code || destinationPortId,
+            name: schedule.destinationPort?.name || 'Unknown Port',
+            countryCode: 'UN',
+            countryName: schedule.destinationPort?.country || 'Unknown',
+            cityName: schedule.destinationPort?.name || 'Unknown',
+            type: 'SEAPORT' as const,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          
+          return mapMaerskScheduleToSailing(schedule, originPort, destinationPort);
+        });
+        
+        // Применяем пагинацию
+        const paginatedSailings = sailings.slice(offset, offset + limit);
+        
+        const response: SailingSearchResult = {
+          sailings: paginatedSailings,
+          total: sailings.length,
+          offset,
+          limit,
+          hasNext: offset + limit < sailings.length
+        };
+        
+        console.log(`✅ Возвращаем ${paginatedSailings.length} расписаний из ${sailings.length} найденных`);
+        return NextResponse.json(response, { status: 200 });
+        
+      } catch (error: any) {
+        console.error('❌ Ошибка при запросе к Maersk API:', error);
+        
+        // Fallback на мок-данные при ошибке
+        console.log('🔄 Используем fallback на мок-данные');
+        const results = searchSailings(
+          originPortId,
+          destinationPortId,
+          departureDateFrom,
+          departureDateTo,
+          carrierCode,
+          containerType,
+          limit + offset
+        );
+        
+        const paginatedResults = results.slice(offset, offset + limit);
+        
+        const response: SailingSearchResult = {
+          sailings: paginatedResults,
+          total: results.length,
+          offset,
+          limit,
+          hasNext: offset + limit < results.length
+        };
+        
+        return NextResponse.json(response, { status: 200 });
+      }
+    } else {
       // Используем моковые данные
+      console.log('🎭 Используем мок-данные (Maersk API отключен)');
       const results = searchSailings(
         originPortId,
         destinationPortId,
@@ -56,12 +181,6 @@ export async function GET(request: NextRequest) {
       };
       
       return NextResponse.json(response, { status: 200 });
-    } else {
-      // TODO: Интеграция с реальным Maersk API
-      return NextResponse.json(
-        { error: 'Maersk API integration not implemented yet' },
-        { status: 501 }
-      );
     }
   } catch (error) {
     console.error('Error in schedules API:', error);
@@ -99,11 +218,130 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Временно используем мок-данные, пока Maersk API не полностью интегрирован
-    const useMocks = true; // process.env.FEATURE_MAERSK !== 'true';
+    // Проверяем флаг для использования Maersk API
+    const useMaerskAPI = process.env.FEATURE_MAERSK === 'true';
     
-    if (useMocks) {
+    if (useMaerskAPI) {
+      try {
+        console.log('🚢 POST запрос к Maersk Schedules API:', { originPortId, destinationPortId, departureDateFrom, departureDateTo });
+        
+        // Подготавливаем параметры для Maersk API
+        const maerskParams: MaerskScheduleSearchParams = {
+          origin: originPortId,
+          destination: destinationPortId,
+          from: departureDateFrom ? departureDateFrom.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          to: departureDateTo ? departureDateTo.toISOString().split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          limit: limit + offset,
+        };
+        
+        // Валидируем параметры
+        const validationErrors = validateScheduleSearchParams(maerskParams);
+        if (validationErrors.length > 0) {
+          return NextResponse.json(
+            { error: `Validation errors: ${validationErrors.join(', ')}` },
+            { status: 400 }
+          );
+        }
+        
+        // Выполняем запрос к Maersk API
+        const queryParams = new URLSearchParams({
+          origin: maerskParams.origin,
+          destination: maerskParams.destination,
+          from: maerskParams.from,
+          to: maerskParams.to,
+          limit: maerskParams.limit?.toString() || '10',
+        });
+        
+        const maerskResponse = await Maersk.fetch(`/products/ocean-products?${queryParams}`, {
+          method: 'GET',
+          cache: true,
+          timeout: 15000,
+        });
+        
+        console.log('📊 POST ответ от Maersk API:', maerskResponse);
+        
+        if (!maerskResponse.data || !Array.isArray(maerskResponse.data)) {
+          console.warn('⚠️ Неверный формат данных от Maersk API, используем fallback');
+          throw new Error('Invalid Maersk API response format');
+        }
+        
+        const maerskSchedules: any[] = maerskResponse.data;
+        console.log(`📈 Получено ${maerskSchedules.length} расписаний от Maersk API (POST)`);
+        
+        // Маппим данные в наш формат
+        const sailings = maerskSchedules.map((schedule: any) => {
+          // Получаем данные портов (можно кэшировать)
+          const originPort = {
+            id: schedule.originPort?.code || originPortId,
+            name: schedule.originPort?.name || 'Unknown Port',
+            countryCode: 'UN',
+            countryName: schedule.originPort?.country || 'Unknown',
+            cityName: schedule.originPort?.name || 'Unknown',
+            type: 'SEAPORT' as const,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          
+          const destinationPort = {
+            id: schedule.destinationPort?.code || destinationPortId,
+            name: schedule.destinationPort?.name || 'Unknown Port',
+            countryCode: 'UN',
+            countryName: schedule.destinationPort?.country || 'Unknown',
+            cityName: schedule.destinationPort?.name || 'Unknown',
+            type: 'SEAPORT' as const,
+            isActive: true,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+          
+          return mapMaerskScheduleToSailing(schedule, originPort, destinationPort);
+        });
+        
+        // Применяем пагинацию
+        const paginatedSailings = sailings.slice(offset, offset + limit);
+        
+        const response: SailingSearchResult = {
+          sailings: paginatedSailings,
+          total: sailings.length,
+          offset,
+          limit,
+          hasNext: offset + limit < sailings.length
+        };
+        
+        console.log(`✅ POST возвращаем ${paginatedSailings.length} расписаний из ${sailings.length} найденных`);
+        return NextResponse.json(response, { status: 200 });
+        
+      } catch (error: any) {
+        console.error('❌ Ошибка при POST запросе к Maersk API:', error);
+        
+        // Fallback на мок-данные при ошибке
+        console.log('🔄 POST используем fallback на мок-данные');
+        const results = searchSailings(
+          originPortId,
+          destinationPortId,
+          departureDateFrom,
+          departureDateTo,
+          carrierCode,
+          containerType,
+          limit + offset
+        );
+        
+        const paginatedResults = results.slice(offset, offset + limit);
+        
+        const response: SailingSearchResult = {
+          sailings: paginatedResults,
+          total: results.length,
+          offset,
+          limit,
+          hasNext: offset + limit < results.length
+        };
+        
+        return NextResponse.json(response, { status: 200 });
+      }
+    } else {
       // Используем моковые данные
+      console.log('🎭 POST используем мок-данные (Maersk API отключен)');
       const results = searchSailings(
         originPortId,
         destinationPortId,
@@ -126,12 +364,6 @@ export async function POST(request: NextRequest) {
       };
       
       return NextResponse.json(response, { status: 200 });
-    } else {
-      // TODO: Интеграция с реальным Maersk API
-      return NextResponse.json(
-        { error: 'Maersk API integration not implemented yet' },
-        { status: 501 }
-      );
     }
   } catch (error) {
     console.error('Error in schedules API:', error);

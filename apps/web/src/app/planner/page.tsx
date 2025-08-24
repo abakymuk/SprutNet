@@ -41,9 +41,53 @@ export default function PlannerPage() {
     departureDateTo: Date | null,
     options?: any
   ) => {
+    console.log("🔍 handleSearch called with:", {
+      originPort: originPort?.id,
+      destinationPort: destinationPort?.id,
+      departureDateFrom,
+      departureDateTo,
+    });
+
     if (!originPort || !destinationPort) {
+      console.log("❌ Ports not selected:", { originPort, destinationPort });
       setError("Пожалуйста, выберите порты отправления и назначения");
       return;
+    }
+
+    if (!originPort.id || !destinationPort.id) {
+      console.log("❌ Port IDs missing:", {
+        originPortId: originPort.id,
+        destinationPortId: destinationPort.id,
+      });
+      setError(
+        "Пожалуйста, выберите корректные порты отправления и назначения"
+      );
+      return;
+    }
+
+    // Валидация порядка дат
+    if (departureDateFrom && departureDateTo) {
+      if (departureDateFrom > departureDateTo) {
+        console.log("❌ Invalid date order:", {
+          from: departureDateFrom.toISOString().split("T")[0],
+          to: departureDateTo.toISOString().split("T")[0],
+        });
+        setError(
+          "Дата 'от' должна быть раньше даты 'до'. Пожалуйста, выберите корректный диапазон дат."
+        );
+        return;
+      }
+
+      const daysDiff =
+        (departureDateTo.getTime() - departureDateFrom.getTime()) /
+        (1000 * 3600 * 24);
+      if (daysDiff > 90) {
+        console.log("❌ Date range too large:", daysDiff, "days");
+        setError(
+          "Диапазон дат не может превышать 90 дней. Пожалуйста, выберите более короткий период."
+        );
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -57,17 +101,34 @@ export default function PlannerPage() {
         limit: "10",
       });
 
-      if (departureDateFrom) {
-        params.append("departureDateFrom", departureDateFrom.toISOString());
-      }
-      if (departureDateTo) {
-        params.append("departureDateTo", departureDateTo.toISOString());
-      }
+      // Устанавливаем разумные значения по умолчанию, если даты не выбраны
+      const fromDate = departureDateFrom || new Date();
+      const toDate =
+        departureDateTo || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // +30 дней
 
-      const response = await fetch(`/api/schedules?${params.toString()}`);
+      params.append("departureDateFrom", fromDate.toISOString().split("T")[0]);
+      params.append("departureDateTo", toDate.toISOString().split("T")[0]);
+
+      const url = `/api/schedules?${params.toString()}`;
+      console.log("🔍 Making request to:", url);
+      console.log("📋 Request params:", {
+        originPortId: originPort.id,
+        destinationPortId: destinationPort.id,
+        departureDateFrom: fromDate.toISOString().split("T")[0],
+        departureDateTo: toDate.toISOString().split("T")[0],
+      });
+
+      const response = await fetch(url);
+
+      console.log("📡 Response status:", response.status);
+      console.log("📡 Response ok:", response.ok);
 
       if (!response.ok) {
-        throw new Error("Failed to fetch schedules");
+        const errorText = await response.text();
+        console.error("❌ API Error:", errorText);
+        throw new Error(
+          `Failed to fetch schedules: ${response.status} ${response.statusText}`
+        );
       }
 
       const data = await response.json();

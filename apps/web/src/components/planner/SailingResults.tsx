@@ -78,6 +78,7 @@ import { ru } from "date-fns/locale";
 import { differenceInDays } from "date-fns";
 import type { Sailing } from "@sprutnet/shared/types";
 import { DeadlinesModal } from "./deadlines-modal";
+import { VesselCard } from "./vessel-card";
 import { ResultsSkeleton } from "./results-skeleton";
 import { ErrorState, EmptyState } from "./error-states";
 
@@ -638,6 +639,16 @@ export function SailingResults({
                             <Ship className="h-5 w-5 text-primary" />
                             {sailing.carrierName} - {sailing.voyageNumber}
                           </CardTitle>
+                          <VesselCard imo={sailing.vessel.imoNumber}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2"
+                            >
+                              <Ship className="h-3 w-3 mr-1" />
+                              {sailing.vessel.name}
+                            </Button>
+                          </VesselCard>
                           {badge && (
                             <Badge
                               variant={badge.variant}

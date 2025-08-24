@@ -143,7 +143,27 @@ export function DeadlinesModal({ sailing, children }: DeadlinesModalProps) {
 
     try {
       console.log("🔍 Fetching deadlines for sailing:", sailing.id);
-      const url = `/api/deadlines?sailingId=${sailing.id}`;
+
+      // Подготавливаем параметры для Maersk API
+      const params = new URLSearchParams({
+        sailingId: sailing.id,
+      });
+
+      // Добавляем параметры для Maersk API если доступны
+      if (sailing.vessel?.imoNumber) {
+        params.append("vesselImo", sailing.vessel.imoNumber);
+      }
+      if (sailing.voyageNumber) {
+        params.append("voyage", sailing.voyageNumber);
+      }
+      if (sailing.originPort?.name) {
+        params.append("portOfLoad", sailing.originPort.name);
+      }
+      if (sailing.originPort?.countryCode) {
+        params.append("isoCountryCode", sailing.originPort.countryCode);
+      }
+
+      const url = `/api/deadlines?${params.toString()}`;
       console.log("🌐 Fetching URL:", url);
 
       const response = await fetch(url);

@@ -690,6 +690,103 @@ export const mockSailings: Sailing[] = [
     deadlines: [],
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01')
+  },
+  // Рейсы с датами в 2025 году для тестирования
+  {
+    id: 'SAIL-2025-001',
+    carrierCode: 'MSCU',
+    carrierName: 'Mediterranean Shipping Company',
+    voyageNumber: 'MSC-2025-001',
+    originPort: mockPorts[0], // Shanghai
+    destinationPort: mockPorts[1], // Singapore
+    departureDate: new Date('2025-08-25T10:00:00Z'),
+    arrivalDate: new Date('2025-08-30T14:00:00Z'),
+    containerType: ContainerType.TEU_40,
+    availableCapacity: 1500,
+    totalCapacity: 2000,
+    status: SailingStatus.SCHEDULED,
+    vessel: mockVessels[0],
+    route: {
+      id: 'ROUTE-2025-001',
+      name: 'Asia-Europe Express 2025',
+      waypoints: [
+        {
+          port: mockPorts[0], // Shanghai
+          arrivalDate: new Date('2025-08-25T08:00:00Z'),
+          departureDate: new Date('2025-08-25T10:00:00Z'),
+          type: WaypointType.LOADING
+        },
+        {
+          port: mockPorts[1], // Singapore
+          arrivalDate: new Date('2025-08-30T14:00:00Z'),
+          departureDate: new Date('2025-08-30T16:00:00Z'),
+          type: WaypointType.DISCHARGE
+        }
+      ],
+      duration: 5,
+      distance: 2800
+    },
+    rates: [
+      {
+        containerType: ContainerType.TEU_40,
+        baseRate: 2000,
+        surcharges: [],
+        totalCost: 2000,
+        currency: 'USD',
+        validUntil: new Date('2025-12-31T23:59:59Z')
+      }
+    ],
+    deadlines: [],
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01')
+  },
+  {
+    id: 'SAIL-2025-002',
+    carrierCode: 'COSU',
+    carrierName: 'COSCO Shipping',
+    voyageNumber: 'COSU-2025-002',
+    originPort: mockPorts[0], // Shanghai
+    destinationPort: mockPorts[2], // Rotterdam
+    departureDate: new Date('2025-09-01T10:00:00Z'),
+    arrivalDate: new Date('2025-09-15T14:00:00Z'),
+    containerType: ContainerType.TEU_40,
+    availableCapacity: 1800,
+    totalCapacity: 2200,
+    status: SailingStatus.SCHEDULED,
+    vessel: mockVessels[4],
+    route: {
+      id: 'ROUTE-2025-002',
+      name: 'Asia-Europe Express 2025',
+      waypoints: [
+        {
+          port: mockPorts[0], // Shanghai
+          arrivalDate: new Date('2025-09-01T08:00:00Z'),
+          departureDate: new Date('2025-09-01T10:00:00Z'),
+          type: WaypointType.LOADING
+        },
+        {
+          port: mockPorts[2], // Rotterdam
+          arrivalDate: new Date('2025-09-15T14:00:00Z'),
+          departureDate: new Date('2025-09-15T16:00:00Z'),
+          type: WaypointType.DISCHARGE
+        }
+      ],
+      duration: 14,
+      distance: 8500
+    },
+    rates: [
+      {
+        containerType: ContainerType.TEU_40,
+        baseRate: 2500,
+        surcharges: [],
+        totalCost: 2500,
+        currency: 'USD',
+        validUntil: new Date('2025-12-31T23:59:59Z')
+      }
+    ],
+    deadlines: [],
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01')
   }
 ];
 

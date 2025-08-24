@@ -202,6 +202,18 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
   };
 
   const handleSearch = () => {
+    console.log("🔍 SearchForm handleSearch called with:", {
+      originPort: originPort?.id,
+      destinationPort: destinationPort?.id,
+      departureDateFrom,
+      departureDateTo,
+    });
+
+    if (!originPort || !destinationPort) {
+      console.log("❌ SearchForm: Ports not selected");
+      return;
+    }
+
     onSearch(
       originPort,
       destinationPort,
@@ -429,7 +441,26 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                           ? departureDateFrom
                           : undefined
                       }
-                      onSelect={(date) => setDepartureDateFrom(date || null)}
+                      onSelect={(date) => {
+                        if (date && departureDateTo) {
+                          if (date > departureDateTo) {
+                            alert(
+                              "Дата 'от' должна быть раньше даты 'до'. Пожалуйста, выберите корректный диапазон дат."
+                            );
+                            return;
+                          }
+                          const daysDiff =
+                            (departureDateTo.getTime() - date.getTime()) /
+                            (1000 * 3600 * 24);
+                          if (daysDiff > 90) {
+                            alert(
+                              "Диапазон дат не может превышать 90 дней. Пожалуйста, выберите более короткий период."
+                            );
+                            return;
+                          }
+                        }
+                        setDepartureDateFrom(date || null);
+                      }}
                       initialFocus
                       locale={ru}
                     />
@@ -464,7 +495,26 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
                           ? departureDateTo
                           : undefined
                       }
-                      onSelect={(date) => setDepartureDateTo(date || null)}
+                      onSelect={(date) => {
+                        if (date && departureDateFrom) {
+                          if (date < departureDateFrom) {
+                            alert(
+                              "Дата 'до' должна быть позже даты 'от'. Пожалуйста, выберите корректный диапазон дат."
+                            );
+                            return;
+                          }
+                          const daysDiff =
+                            (date.getTime() - departureDateFrom.getTime()) /
+                            (1000 * 3600 * 24);
+                          if (daysDiff > 90) {
+                            alert(
+                              "Диапазон дат не может превышать 90 дней. Пожалуйста, выберите более короткий период."
+                            );
+                            return;
+                          }
+                        }
+                        setDepartureDateTo(date || null);
+                      }}
                       initialFocus
                       locale={ru}
                     />

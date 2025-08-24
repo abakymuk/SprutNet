@@ -1,4 +1,11 @@
 import { NextResponse } from 'next/server';
+import { Maersk } from '@/lib/maersk';
+import { 
+  mapMaerskDeadlineToDeadline, 
+  validateDeadlineSearchParams,
+  type MaerskDeadlineSearchParams,
+  type MaerskDeadlineResponse 
+} from '@/lib/types/deadlines';
 
 export async function GET(request: Request) {
   try {
@@ -6,26 +13,104 @@ export async function GET(request: Request) {
     const sailingId = searchParams.get('sailingId');
     const vesselImo = searchParams.get('vesselImo');
     const voyage = searchParams.get('voyage');
+    const portOfLoad = searchParams.get('portOfLoad');
+    const isoCountryCode = searchParams.get('isoCountryCode');
 
-    console.log("🔍 Deadlines API called with:", { sailingId, vesselImo, voyage });
+    console.log("🔍 Deadlines API called with:", { sailingId, vesselImo, voyage, portOfLoad, isoCountryCode });
 
-    if (!sailingId && !vesselImo && !voyage) {
-      return NextResponse.json(
-        { error: 'Необходимо указать sailingId, vesselImo или voyage' },
-        { status: 400 }
-      );
+    // Проверяем флаг для использования Maersk API
+    const useMaerskAPI = process.env.FEATURE_MAERSK === 'true';
+
+    if (useMaerskAPI && vesselImo && voyage && portOfLoad && isoCountryCode) {
+      // Сначала валидируем параметры
+      const maerskParams: MaerskDeadlineSearchParams = {
+        ISOCountryCode: isoCountryCode,
+        portOfLoad,
+        vesselIMONumber: vesselImo,
+        voyage,
+        limit: 50,
+      };
+
+      // Валидируем параметры
+      const validationErrors = validateDeadlineSearchParams(maerskParams);
+      if (validationErrors.length > 0) {
+        return NextResponse.json(
+          { error: `Validation errors: ${validationErrors.join(', ')}` },
+          { status: 400 }
+        );
+      }
+      try {
+        console.log('⏰ Запрос к Maersk Deadlines API:', { vesselImo, voyage, portOfLoad, isoCountryCode });
+
+
+
+        // Выполняем запрос к Maersk API
+        const queryParams = new URLSearchParams({
+          ISOCountryCode: maerskParams.ISOCountryCode,
+          portOfLoad: maerskParams.portOfLoad,
+          vesselIMONumber: maerskParams.vesselIMONumber,
+          voyage: maerskParams.voyage,
+          limit: maerskParams.limit?.toString() || '50',
+        });
+
+        const maerskResponse = await Maersk.fetch(`/shipment-deadlines?${queryParams}`, {
+          method: 'GET',
+          cache: true,
+          timeout: 15000,
+        });
+
+        console.log('📊 Ответ от Maersk Deadlines API:', maerskResponse);
+
+        if (!maerskResponse.data || !maerskResponse.data.shipmentDeadlines) {
+          console.warn('⚠️ Неверный формат данных от Maersk API, используем fallback');
+          throw new Error('Invalid Maersk API response format');
+        }
+
+        const maerskData: MaerskDeadlineResponse = maerskResponse.data;
+        const deadlines = maerskData.shipmentDeadlines.deadlines.map(deadline =>
+          mapMaerskDeadlineToDeadline(
+            deadline,
+            maerskData.shipmentDeadlines.terminalName,
+            sailingId || 'unknown',
+            portOfLoad,
+            'UTC' // По умолчанию UTC, можно улучшить определение timezone
+          )
+        );
+
+        console.log('✅ Успешно получены дедлайны от Maersk API:', deadlines.length);
+
+        return NextResponse.json({
+          deadlines,
+          total: deadlines.length,
+          source: 'maersk',
+          terminalName: maerskData.shipmentDeadlines.terminalName
+        });
+
+      } catch (error: any) {
+        console.error('❌ Ошибка при запросе к Maersk API:', error);
+        
+        // Fallback на mock данные
+        console.log('🔄 Используем fallback на mock данные');
+        const mockDeadlines = generateMockDeadlines(sailingId);
+        
+        return NextResponse.json({
+          deadlines: mockDeadlines,
+          total: mockDeadlines.length,
+          source: 'mock (fallback)',
+          error: error.message
+        });
+      }
+    } else {
+      // Используем mock данные если Maersk API не включен или нет необходимых параметров
+      console.log('📅 Используем mock данные (Maersk API не включен или недостаточно параметров)');
+      const mockDeadlines = generateMockDeadlines(sailingId);
+      
+      return NextResponse.json({
+        deadlines: mockDeadlines,
+        total: mockDeadlines.length,
+        source: 'mock'
+      });
     }
-
-    // Для демонстрации всегда возвращаем mock данные
-    const mockDeadlines = generateMockDeadlines(sailingId);
-    
-    console.log("📅 Returning mock deadlines:", mockDeadlines);
-    
-    return NextResponse.json({
-      deadlines: mockDeadlines,
-      total: mockDeadlines.length,
-      source: 'mock'
-    });
 
   } catch (error) {
     console.error('❌ Ошибка при получении дедлайнов:', error);
