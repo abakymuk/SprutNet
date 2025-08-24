@@ -379,7 +379,7 @@ export default function E2ETestPage() {
           <h2 className="text-xl font-semibold">Тестовые сценарии</h2>
           <p className="text-sm text-muted-foreground mb-4">
             Нажмите на карточку теста для запуска отдельного теста или
-            используйте кнопку "Запустить все тесты"
+            используйте кнопку &ldquo;Запустить все тесты&rdquo;
           </p>
 
           <div className="grid gap-4">

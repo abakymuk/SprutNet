@@ -178,7 +178,7 @@ export function DeadlinesModal({ sailing, children }: DeadlinesModalProps) {
     if (isOpen) {
       fetchDeadlines();
     }
-  }, [isOpen, sailing.id]);
+  }, [isOpen, sailing.id, fetchDeadlines]);
 
   const getDeadlineStatus = (deadline: Deadline): DeadlineStatus => {
     const now = new Date();
