@@ -32,6 +32,7 @@ describe('Ports Search API', () => {
       expect(response.status).toBe(200);
       expect(data).toEqual({
         success: true,
+        ports: [],
         data: [],
         total: 0,
       });
@@ -109,6 +110,8 @@ describe('Ports Search API', () => {
       expect(mockMaerskFetch).toHaveBeenCalledWith('/reference-data/locations', {
         cache: true,
         timeout: 10000,
+        endpointType: 'ports',
+        params: {},
       });
 
       // Восстанавливаем переменную окружения

@@ -26,6 +26,59 @@ import {
 import Link from "next/link";
 import { useSearchContext } from "@/contexts/search-context";
 
+// Функция для преобразования RouteOption в Sailing
+function convertRouteToSailing(route: any): any {
+  return {
+    id: route.id,
+    carrierCode: route.carrier?.code || "UNK",
+    carrierName: route.carrier?.name || "Unknown Carrier",
+    voyageNumber: route.id,
+    originPort: route.originPort,
+    destinationPort: route.destinationPort,
+    departureDate: new Date(route.departureDate),
+    arrivalDate: new Date(route.arrivalDate),
+    containerType: "40FT" as any, // По умолчанию
+    availableCapacity: 1000,
+    totalCapacity: 2000,
+    status: "SCHEDULED" as any,
+    vessel: {
+      imoNumber: route.vessel?.imo || "0000000",
+      name: route.vessel?.name || "Unknown Vessel",
+      carrierCode: route.carrier?.code || "UNK",
+      capacity: 2000,
+      builtYear: 2020,
+      flag: "Unknown",
+    },
+    route: {
+      id: `${route.originPort.id}-${route.destinationPort.id}`,
+      originPort: route.originPort,
+      destinationPort: route.destinationPort,
+      transitTime: route.transitTime || route.duration,
+      duration: route.transitTime || route.duration, // Добавляем duration для совместимости
+      distance: 0,
+      type: "OCEAN" as any,
+    },
+    rates: route.price
+      ? [
+          {
+            id: `rate-${route.id}`,
+            containerType: "40FT" as any,
+            currency: route.price.currency || "USD",
+            amount: route.price.amount || 0,
+            totalCost: route.price.amount || 0, // Добавляем totalCost для совместимости
+            validFrom: new Date(route.departureDate),
+            validTo: new Date(route.arrivalDate),
+            type: "BASE" as any,
+          },
+        ]
+      : [],
+    deadlines: [],
+    transitTime: route.transitTime || route.duration,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+}
+
 export default function PlannerPage() {
   const { searchState, setSearchResults } = useSearchContext();
   const [dataSource, setDataSource] = useState<
@@ -113,7 +166,7 @@ export default function PlannerPage() {
       params.append("departureDateFrom", fromDate.toISOString().split("T")[0]);
       params.append("departureDateTo", toDate.toISOString().split("T")[0]);
 
-      const url = `/api/schedules?${params.toString()}`;
+      const url = `/api/routes/search?${params.toString()}`;
       console.log("🔍 Making request to:", url);
       console.log("📋 Request params:", {
         originPortId: originPort.id,
@@ -137,12 +190,14 @@ export default function PlannerPage() {
 
       const data = await response.json();
       console.log("📥 Received data from API:", data);
-      console.log("📊 Sailings count:", data.sailings?.length || 0);
+      console.log("📊 Routes count:", data.routes?.length || 0);
 
       // Обновляем источник данных
       setDataSource(data.source || "maersk");
       setApiError(undefined);
-      setSearchResults(data.sailings || []);
+      // Преобразуем routes в sailings для совместимости с компонентом
+      const sailings = (data.routes || []).map(convertRouteToSailing);
+      setSearchResults(sailings);
     } catch (error) {
       console.error("Error searching schedules:", error);
       const errorMessage =

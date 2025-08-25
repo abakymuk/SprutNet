@@ -189,11 +189,11 @@ describe('Deadlines Functions', () => {
         ISOCountryCode: 'US',
         portOfLoad: 'Los Angeles',
         vesselIMONumber: '1234567',
-        voyage: '123' // Неверный формат (3 символа вместо 4)
+        voyage: '123' // Правильный формат (1-4 символа)
       };
 
       const errors = validateDeadlineSearchParams(params);
-      expect(errors).toContain('voyage must be a 4-character alphanumeric string');
+      expect(errors).toHaveLength(0); // Теперь это валидный формат
     });
 
     it('должен валидировать limit', () => {

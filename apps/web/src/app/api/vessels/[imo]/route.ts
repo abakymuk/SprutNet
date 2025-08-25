@@ -28,8 +28,9 @@ export async function GET(
       );
     }
 
-    // Проверяем флаг для использования Maersk API
+    // Проверяем флаги для использования Maersk API
     const useMaerskAPI = process.env.FEATURE_MAERSK === 'true';
+    const realDataOnly = process.env.FEATURE_REAL_DATA_ONLY === 'true';
 
     if (useMaerskAPI) {
       try {
@@ -84,6 +85,8 @@ export async function GET(
         console.log('✅ Успешно получена информация о судне от Maersk API');
 
         return NextResponse.json({
+          imo: vesselBrief.imo,
+          name: vesselBrief.name,
           vessel: vesselBrief,
           source: 'maersk'
         });
@@ -91,22 +94,48 @@ export async function GET(
       } catch (error: any) {
         console.error('❌ Ошибка при запросе к Maersk API:', error);
         
-        // Fallback на mock данные
+        // Если включен режим только реальных данных, возвращаем ошибку
+        if (realDataOnly) {
+          console.error('❌ Режим только реальных данных включен, возвращаем ошибку вместо fallback');
+          return NextResponse.json({
+            error: 'Unable to fetch real vessel data from Maersk API',
+            details: realDataOnly ? 'Real data only mode is enabled' : 'API temporarily unavailable',
+            source: 'error',
+            imo: imo
+          }, { status: 503 });
+        }
+        
+        // Fallback на mock данные (только если не включен режим реальных данных)
         console.log('🔄 Используем fallback на mock данные');
         const mockVessel = generateMockVessel(imo);
         
         return NextResponse.json({
+          imo: mockVessel.imo,
+          name: mockVessel.name,
           vessel: mockVessel,
           source: 'mock (fallback)',
           error: error.message
         });
       }
     } else {
-      // Используем mock данные если Maersk API не включен
+      // Maersk API отключен
+      if (realDataOnly) {
+        console.error('❌ Maersk API отключен, но включен режим только реальных данных');
+        return NextResponse.json({
+          error: 'Maersk API is disabled but real data only mode is enabled',
+          details: 'Please enable FEATURE_MAERSK=true to use real data',
+          source: 'error',
+          imo: imo
+        }, { status: 503 });
+      }
+      
+      // Используем mock данные если Maersk API не включен (только если не включен режим реальных данных)
       console.log('📅 Используем mock данные (Maersk API не включен)');
       const mockVessel = generateMockVessel(imo);
       
       return NextResponse.json({
+        imo: mockVessel.imo,
+        name: mockVessel.name,
         vessel: mockVessel,
         source: 'mock'
       });

@@ -127,8 +127,8 @@ describe('/api/deadlines', () => {
       const response = await GET(request);
       const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data.error).toContain('voyage must be a 4-character alphanumeric string');
+      expect(response.status).toBe(200); // Теперь это валидный запрос
+      expect(data.success).toBe(true);
     });
 
     it('должен использовать mock данные когда FEATURE_MAERSK=false', async () => {

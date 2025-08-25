@@ -9,6 +9,8 @@ import {
   type MaerskScheduleResponse 
 } from '@/lib/types/schedules';
 import { logSearchStarted, logSearchSuccess, logSearchError } from '@/lib/telemetry/logger';
+import { routeCacheService } from '@/lib/services/route-cache-service';
+import { logger } from '@/lib/logging/advanced-logger';
 
 /**
  * GET /api/schedules
@@ -44,19 +46,70 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Проверяем флаг для использования Maersk API
+    // Подготавливаем параметры для поиска
+    const fromDate = departureDateFrom ? departureDateFrom.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+    const toDate = departureDateTo ? departureDateTo.toISOString().split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    // Проверяем кэш в Supabase
+    const startTime = Date.now();
+    const cachedData = await routeCacheService.getCachedRoute(
+      originPortId,
+      destinationPortId,
+      fromDate,
+      toDate
+    );
+    
+    if (cachedData) {
+      // Данные найдены в кэше
+      const responseTime = Date.now() - startTime;
+      
+      // Обновляем статистику использования
+      await routeCacheService.updateRouteUsageStats(
+        originPortId,
+        destinationPortId,
+        fromDate,
+        toDate,
+        true, // cache hit
+        responseTime
+      );
+      
+      logger.info('Schedules served from cache', {
+        route: `${originPortId}-${destinationPortId}`,
+        responseTime,
+        dataSource: cachedData.data_source
+      });
+      
+      // Логируем успешный поиск
+      logSearchSuccess(responseTime);
+      
+      return NextResponse.json({
+        success: true,
+        sailings: cachedData.cached_data.sailings || [],
+        total: cachedData.cached_data.total || 0,
+        source: cachedData.data_source,
+        cached: true,
+        cacheAge: Date.now() - new Date(cachedData.cache_created_at).getTime()
+      });
+    }
+    
+    // Данные не найдены в кэше, запрашиваем у Maersk API
     const useMaerskAPI = process.env.FEATURE_MAERSK === 'true';
+    const realDataOnly = process.env.FEATURE_REAL_DATA_ONLY === 'true';
     
     if (useMaerskAPI) {
       try {
-        console.log('🚢 Запрос к Maersk Schedules API:', { originPortId, destinationPortId, departureDateFrom, departureDateTo });
+        logger.info('Fetching schedules from Maersk API', { 
+          route: `${originPortId}-${destinationPortId}`,
+          fromDate,
+          toDate
+        });
         
         // Подготавливаем параметры для Maersk API
         const maerskParams: MaerskScheduleSearchParams = {
           origin: originPortId,
           destination: destinationPortId,
-          from: departureDateFrom ? departureDateFrom.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-          to: departureDateTo ? departureDateTo.toISOString().split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          from: fromDate,
+          to: toDate,
           limit: limit + offset,
         };
         
@@ -86,15 +139,23 @@ export async function GET(request: NextRequest) {
           params: maerskParams,
         });
         
-        console.log('📊 Ответ от Maersk API:', maerskResponse);
+        logger.info('Maersk API response received', { 
+          route: `${originPortId}-${destinationPortId}`,
+          status: maerskResponse.status,
+          dataLength: maerskResponse.data?.length || 0
+        });
         
         if (!maerskResponse.data || !Array.isArray(maerskResponse.data)) {
-          console.warn('⚠️ Неверный формат данных от Maersk API, используем fallback');
+          logger.warn('Invalid Maersk API response format, using fallback', { 
+            route: `${originPortId}-${destinationPortId}` 
+          });
           throw new Error('Invalid Maersk API response format');
         }
         
         const maerskSchedules: any[] = maerskResponse.data;
-        console.log(`📈 Получено ${maerskSchedules.length} расписаний от Maersk API`);
+        logger.info(`Received ${maerskSchedules.length} schedules from Maersk API`, { 
+          route: `${originPortId}-${destinationPortId}` 
+        });
         
         // Маппим данные в наш формат
         const sailings = maerskSchedules.map((schedule: any) => {
@@ -137,14 +198,80 @@ export async function GET(request: NextRequest) {
           hasNext: offset + limit < sailings.length
         };
         
-        console.log(`✅ Возвращаем ${paginatedSailings.length} расписаний из ${sailings.length} найденных`);
-        return NextResponse.json(response, { status: 200 });
+        // Кэшируем данные в Supabase
+        const apiResponseTime = Date.now() - startTime;
+        await routeCacheService.cacheRoute(
+          originPortId,
+          destinationPortId,
+          fromDate,
+          toDate,
+          response,
+          apiResponseTime,
+          'maersk'
+        );
+        
+        // Обновляем статистику использования
+        await routeCacheService.updateRouteUsageStats(
+          originPortId,
+          destinationPortId,
+          fromDate,
+          toDate,
+          false, // cache miss
+          apiResponseTime
+        );
+        
+        logger.info(`Returning ${paginatedSailings.length} schedules from ${sailings.length} found`, { 
+          route: `${originPortId}-${destinationPortId}`,
+          responseTime: apiResponseTime,
+          cached: false
+        });
+        
+        // Логируем успешный поиск
+        logSearchSuccess(apiResponseTime);
+        
+        return NextResponse.json({
+          ...response,
+          source: 'maersk',
+          cached: false,
+          responseTime: apiResponseTime
+        }, { status: 200 });
         
       } catch (error: any) {
-        console.error('❌ Ошибка при запросе к Maersk API:', error);
+        logger.error('Error fetching from Maersk API', error as Error, { 
+          endpoint: `/api/schedules`,
+          method: 'GET'
+        });
         
-        // Fallback на мок-данные при ошибке
-        console.log('🔄 Используем fallback на мок-данные');
+        // Если включен режим только реальных данных, возвращаем ошибку
+        if (realDataOnly) {
+          logger.error('Real data only mode enabled, returning error instead of fallback', error as Error, { 
+            endpoint: `/api/schedules`,
+            method: 'GET'
+          });
+          
+          // Логируем ошибку поиска
+          logSearchError(error.message, {
+            originPort: originPortId,
+            destinationPort: destinationPortId,
+            departureDateFrom: fromDate,
+            departureDateTo: toDate,
+          });
+          
+          return NextResponse.json({
+            error: 'Unable to fetch real data from Maersk API',
+            details: realDataOnly ? 'Real data only mode is enabled' : 'API temporarily unavailable',
+            source: 'error',
+            cached: false,
+            responseTime: Date.now() - startTime
+          }, { status: 503 });
+        }
+        
+        // Fallback на мок-данные при ошибке (только если не включен режим реальных данных)
+        logger.info('Using fallback mock data', { 
+          endpoint: `/api/schedules`,
+          method: 'GET'
+        });
+        
         const results = searchSailings(
           originPortId,
           destinationPortId,
@@ -165,11 +292,66 @@ export async function GET(request: NextRequest) {
           hasNext: offset + limit < results.length
         };
         
-        return NextResponse.json(response, { status: 200 });
+        // Кэшируем fallback данные
+        const fallbackResponseTime = Date.now() - startTime;
+        await routeCacheService.cacheRoute(
+          originPortId,
+          destinationPortId,
+          fromDate,
+          toDate,
+          response,
+          fallbackResponseTime,
+          'fallback'
+        );
+        
+        // Обновляем статистику использования
+        await routeCacheService.updateRouteUsageStats(
+          originPortId,
+          destinationPortId,
+          fromDate,
+          toDate,
+          false, // cache miss
+          fallbackResponseTime
+        );
+        
+        logger.info(`Returning ${paginatedResults.length} fallback schedules`, { 
+          endpoint: `/api/schedules`,
+          method: 'GET'
+        });
+        
+        // Логируем успешный поиск
+        logSearchSuccess(fallbackResponseTime);
+        
+        return NextResponse.json({
+          ...response,
+          source: 'fallback',
+          cached: false,
+          responseTime: fallbackResponseTime
+        }, { status: 200 });
       }
     } else {
-      // Используем моковые данные
-      console.log('🎭 Используем мок-данные (Maersk API отключен)');
+      // Maersk API отключен
+      if (realDataOnly) {
+        logger.error('Maersk API is disabled but real data only mode is enabled', new Error('Maersk API disabled'), { 
+          endpoint: `/api/schedules`,
+          method: 'GET'
+        });
+        
+        return NextResponse.json({
+          error: 'Maersk API is disabled but real data only mode is enabled',
+          details: 'Please enable FEATURE_MAERSK=true to use real data',
+          source: 'error',
+          cached: false,
+          responseTime: Date.now() - startTime
+        }, { status: 503 });
+      }
+      
+      // Используем моковые данные (только если не включен режим реальных данных)
+      logger.info('Using mock data (Maersk API disabled)', { 
+        endpoint: `/api/schedules`,
+        method: 'GET'
+      });
+      
       const results = searchSailings(
         originPortId,
         destinationPortId,
@@ -191,7 +373,42 @@ export async function GET(request: NextRequest) {
         hasNext: offset + limit < results.length
       };
       
-      return NextResponse.json(response, { status: 200 });
+      // Кэшируем мок данные
+      const mockResponseTime = Date.now() - startTime;
+      await routeCacheService.cacheRoute(
+        originPortId,
+        destinationPortId,
+        fromDate,
+        toDate,
+        response,
+        mockResponseTime,
+        'mock'
+      );
+      
+      // Обновляем статистику использования
+      await routeCacheService.updateRouteUsageStats(
+        originPortId,
+        destinationPortId,
+        fromDate,
+        toDate,
+        false, // cache miss
+        mockResponseTime
+      );
+      
+      logger.info(`Returning ${paginatedResults.length} mock schedules`, { 
+        endpoint: `/api/schedules`,
+        method: 'GET'
+      });
+      
+      // Логируем успешный поиск
+      logSearchSuccess(mockResponseTime);
+      
+      return NextResponse.json({
+        ...response,
+        source: 'mock',
+        cached: false,
+        responseTime: mockResponseTime
+      }, { status: 200 });
     }
   } catch (error) {
     console.error('Error in schedules API:', error);

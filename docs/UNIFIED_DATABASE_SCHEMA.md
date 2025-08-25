@@ -1,0 +1,905 @@
+# Унифицированная схема базы данных Supabase для SprutNet
+
+## Анализ текущего состояния
+
+После изучения всей кодовой базы SprutNet, включая Prisma схему и Supabase конфигурацию, я выявил:
+
+### Текущая архитектура:
+- **Prisma ORM** с детальной нормализованной моделью Maersk API
+- **Supabase** с базовой схемой кэширования
+- **Monorepo** с Next.js приложением
+- **Shared types** в отдельном пакете
+- **Maersk API интеграция** с кэшированием и мониторингом
+
+### Существующие модели:
+- **Prisma**: Полная нормализованная модель Maersk API (vessels, locations, ocean_products, transport_schedules, deadlines)
+- **Supabase**: Базовая схема кэширования (api_cache, reminders, favorites, search_history)
+
+## Унифицированная схема базы данных
+
+### 1. Основные доменные таблицы (на основе Prisma)
+
+#### `countries` - Страны (ISO 3166-1)
+```sql
+CREATE TABLE countries (
+  country_code VARCHAR(2) PRIMARY KEY,
+  country_name VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_countries_name ON countries(country_name);
+```
+
+#### `carrier_codes` - Коды перевозчиков (NMFTA SCAC)
+```sql
+CREATE TABLE carrier_codes (
+  carrier_code VARCHAR(4) PRIMARY KEY,
+  carrier_name VARCHAR(100) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_carrier_codes_name ON carrier_codes(carrier_name);
+```
+
+#### `transport_modes` - Режимы транспорта
+```sql
+CREATE TABLE transport_modes (
+  mode_code VARCHAR(3) PRIMARY KEY,
+  mode_name VARCHAR(50) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+#### `location_types` - Типы локаций
+```sql
+CREATE TABLE location_types (
+  type_code VARCHAR(50) PRIMARY KEY,
+  type_name VARCHAR(50) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+#### `vessels` - Судна (Maersk Vessels API)
+```sql
+CREATE TABLE vessels (
+  vessel_imo_number INTEGER PRIMARY KEY, -- 7-значный IMO
+  carrier_vessel_code VARCHAR(3) NOT NULL,
+  vessel_short_name VARCHAR(18),
+  vessel_long_name VARCHAR(35),
+  vessel_flag_code VARCHAR(2) REFERENCES countries(country_code),
+  vessel_built_year INTEGER,
+  vessel_call_sign VARCHAR(10),
+  vessel_capacity_teu INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_vessels_carrier_code ON vessels(carrier_vessel_code);
+CREATE INDEX idx_vessels_flag_code ON vessels(vessel_flag_code);
+CREATE INDEX idx_vessels_capacity ON vessels(vessel_capacity_teu);
+CREATE INDEX idx_vessels_built_year ON vessels(vessel_built_year);
+
+-- Полнотекстовый поиск
+CREATE INDEX idx_vessels_fulltext ON vessels 
+  USING gin(to_tsvector('english', 
+    COALESCE(vessel_short_name, '') || ' ' || 
+    COALESCE(vessel_long_name, '') || ' ' || 
+    COALESCE(vessel_call_sign, '')
+  ));
+```
+
+#### `locations` - Локации (Maersk Locations API)
+```sql
+CREATE TABLE locations (
+  carrier_geo_id VARCHAR(13) PRIMARY KEY,
+  country_code VARCHAR(2) REFERENCES countries(country_code),
+  country_name VARCHAR(100),
+  un_location_code VARCHAR(5),
+  city_name VARCHAR(100),
+  un_region_code VARCHAR(3),
+  un_region_name VARCHAR(100),
+  location_type VARCHAR(50) REFERENCES location_types(type_code),
+  location_name VARCHAR(100),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_locations_country_code ON locations(country_code);
+CREATE INDEX idx_locations_city_name ON locations(city_name);
+CREATE INDEX idx_locations_un_location_code ON locations(un_location_code);
+CREATE INDEX idx_locations_location_type ON locations(location_type);
+CREATE INDEX idx_locations_region_code ON locations(un_region_code);
+
+-- Полнотекстовый поиск
+CREATE INDEX idx_locations_fulltext ON locations 
+  USING gin(to_tsvector('english', 
+    COALESCE(location_name, '') || ' ' || 
+    COALESCE(city_name, '') || ' ' || 
+    COALESCE(country_name, '') || ' ' || 
+    COALESCE(un_location_code, '')
+  ));
+```
+
+#### `carrier_locations` - Дополнительные данные локаций
+```sql
+CREATE TABLE carrier_locations (
+  carrier_geo_id VARCHAR(13) PRIMARY KEY REFERENCES locations(carrier_geo_id),
+  carrier_rkts_code VARCHAR(10),
+  carrier_rkst_code VARCHAR(10),
+  time_zone_id VARCHAR(50),
+  carrier_country_geo_id VARCHAR(13),
+  alternate_aliases TEXT[],
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_carrier_locations_timezone ON carrier_locations(time_zone_id);
+CREATE INDEX idx_carrier_locations_aliases ON carrier_locations USING gin(alternate_aliases);
+```
+
+#### `ocean_products` - Океанские продукты (Maersk P2P API)
+```sql
+CREATE TABLE ocean_products (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  vessel_operator_carrier_code VARCHAR(4) REFERENCES carrier_codes(carrier_code),
+  carrier_product_id VARCHAR(50),
+  carrier_product_sequence_id VARCHAR(50),
+  product_valid_from_date DATE,
+  product_valid_to_date DATE,
+  numberofproductlinks VARCHAR(10),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_ocean_products_carrier_code ON ocean_products(vessel_operator_carrier_code);
+CREATE INDEX idx_ocean_products_valid_dates ON ocean_products(product_valid_from_date, product_valid_to_date);
+CREATE INDEX idx_ocean_products_product_id ON ocean_products(carrier_product_id);
+```
+
+#### `transport_schedules` - Расписания транспорта
+```sql
+CREATE TABLE transport_schedules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  ocean_product_id UUID REFERENCES ocean_products(id) ON DELETE CASCADE,
+  departure_date_time TIMESTAMP WITH TIME ZONE,
+  arrival_date_time TIMESTAMP WITH TIME ZONE,
+  transit_time VARCHAR(10),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_transport_schedules_ocean_product_id ON transport_schedules(ocean_product_id);
+CREATE INDEX idx_transport_schedules_dates ON transport_schedules(departure_date_time, arrival_date_time);
+CREATE INDEX idx_transport_schedules_transit_time ON transport_schedules(transit_time);
+```
+
+#### `transport_legs` - Участки маршрута
+```sql
+CREATE TABLE transport_legs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  transport_schedule_id UUID REFERENCES transport_schedules(id) ON DELETE CASCADE,
+  departure_date_time TIMESTAMP WITH TIME ZONE,
+  arrival_date_time TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_transport_legs_schedule_id ON transport_legs(transport_schedule_id);
+CREATE INDEX idx_transport_legs_dates ON transport_legs(departure_date_time, arrival_date_time);
+```
+
+#### `transports` - Транспортные средства
+```sql
+CREATE TABLE transports (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  transport_leg_id UUID REFERENCES transport_legs(id) ON DELETE CASCADE,
+  vessel_imo_number INTEGER REFERENCES vessels(vessel_imo_number),
+  carrier_vessel_code VARCHAR(3),
+  vessel_name VARCHAR(35),
+  transport_mode VARCHAR(3) REFERENCES transport_modes(mode_code),
+  carrier_trade_lane_name VARCHAR(100),
+  carrier_departure_voyage_number VARCHAR(4),
+  inducement_link_flag VARCHAR(1),
+  carrier_service_code VARCHAR(3),
+  carrier_service_name VARCHAR(100),
+  link_direction VARCHAR(10),
+  carrier_code VARCHAR(10),
+  routing_type VARCHAR(1),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_transports_leg_id ON transports(transport_leg_id);
+CREATE INDEX idx_transports_vessel_imo ON transports(vessel_imo_number);
+CREATE INDEX idx_transports_mode ON transports(transport_mode);
+CREATE INDEX idx_transports_voyage ON transports(carrier_departure_voyage_number);
+CREATE INDEX idx_transports_service ON transports(carrier_service_code);
+```
+
+#### `facilities` - Объекты (терминалы, депо)
+```sql
+CREATE TABLE facilities (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  transport_leg_id UUID REFERENCES transport_legs(id) ON DELETE CASCADE,
+  carrier_site_geo_id VARCHAR(13),
+  location_type VARCHAR(50),
+  location_name VARCHAR(100),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_facilities_leg_id ON facilities(transport_leg_id);
+CREATE INDEX idx_facilities_site_geo_id ON facilities(carrier_site_geo_id);
+CREATE INDEX idx_facilities_location_type ON facilities(location_type);
+```
+
+#### `un_location_codes` - UN/LOCODE коды
+```sql
+CREATE TABLE un_location_codes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  facility_id UUID REFERENCES facilities(id) ON DELETE CASCADE,
+  un_location_code VARCHAR(5),
+  city_un_location_code VARCHAR(5),
+  site_un_location_code VARCHAR(5),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_un_location_codes_facility_id ON un_location_codes(facility_id);
+CREATE INDEX idx_un_location_codes_location_code ON un_location_codes(un_location_code);
+CREATE INDEX idx_un_location_codes_city_code ON un_location_codes(city_un_location_code);
+```
+
+#### `shipment_deadlines` - Дедлайны отправки (Maersk Deadlines API)
+```sql
+CREATE TABLE shipment_deadlines (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  vessel_imo_number INTEGER REFERENCES vessels(vessel_imo_number),
+  voyage VARCHAR(4),
+  port_of_load VARCHAR(100),
+  iso_country_code VARCHAR(2) REFERENCES countries(country_code),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_shipment_deadlines_vessel_imo ON shipment_deadlines(vessel_imo_number);
+CREATE INDEX idx_shipment_deadlines_voyage ON shipment_deadlines(voyage);
+CREATE INDEX idx_shipment_deadlines_country ON shipment_deadlines(iso_country_code);
+CREATE INDEX idx_shipment_deadlines_port ON shipment_deadlines(port_of_load);
+```
+
+#### `deadlines` - Дедлайны
+```sql
+CREATE TABLE deadlines (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  shipment_deadline_id UUID REFERENCES shipment_deadlines(id) ON DELETE CASCADE,
+  deadline_name VARCHAR(100),
+  deadline_local TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_deadlines_shipment_id ON deadlines(shipment_deadline_id);
+CREATE INDEX idx_deadlines_local ON deadlines(deadline_local);
+CREATE INDEX idx_deadlines_name ON deadlines(deadline_name);
+```
+
+#### `shipment_deadline` - Детали дедлайнов
+```sql
+CREATE TABLE shipment_deadline (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  shipment_deadlines_id UUID REFERENCES shipment_deadlines(id) ON DELETE CASCADE,
+  terminal_name VARCHAR(100),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_shipment_deadline_shipment_id ON shipment_deadline(shipment_deadlines_id);
+CREATE INDEX idx_shipment_deadline_terminal ON shipment_deadline(terminal_name);
+```
+
+### 2. Пользовательские данные и кэширование
+
+#### `users` - Пользователи
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Основная информация
+  email VARCHAR(255) UNIQUE NOT NULL,
+  name VARCHAR(100),
+  company VARCHAR(100),
+  role VARCHAR(50), -- 'shipper', 'forwarder', 'carrier', 'admin'
+  
+  -- Настройки
+  preferences JSONB DEFAULT '{}',
+  timezone VARCHAR(50) DEFAULT 'UTC',
+  language VARCHAR(10) DEFAULT 'en',
+  
+  -- Статус
+  is_active BOOLEAN DEFAULT TRUE,
+  is_verified BOOLEAN DEFAULT FALSE,
+  
+  -- Временные метки
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  last_login TIMESTAMP WITH TIME ZONE
+);
+
+-- Индексы
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_company ON users(company);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_active ON users(is_active) WHERE is_active = TRUE;
+```
+
+#### `api_cache` - Универсальный кэш API
+```sql
+CREATE TABLE api_cache (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Ключ кэша
+  cache_key VARCHAR(255) UNIQUE NOT NULL,
+  endpoint VARCHAR(100) NOT NULL,
+  params JSONB NOT NULL DEFAULT '{}',
+  
+  -- Данные
+  data JSONB NOT NULL,
+  data_size_bytes INTEGER,
+  compressed BOOLEAN DEFAULT FALSE,
+  
+  -- TTL и доступ
+  ttl_seconds INTEGER NOT NULL DEFAULT 900, -- 15 минут
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  access_count INTEGER DEFAULT 0,
+  last_accessed TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- Метаданные
+  cache_type VARCHAR(50), -- 'ports', 'vessels', 'schedules', 'deadlines'
+  response_time_ms INTEGER,
+  status_code INTEGER
+);
+
+-- Индексы
+CREATE INDEX idx_api_cache_key_hash ON api_cache USING hash(cache_key);
+CREATE INDEX idx_api_cache_endpoint ON api_cache(endpoint);
+CREATE INDEX idx_api_cache_expires ON api_cache(expires_at);
+CREATE INDEX idx_api_cache_last_accessed ON api_cache(last_accessed);
+CREATE INDEX idx_api_cache_type ON api_cache(cache_type);
+CREATE INDEX idx_api_cache_params ON api_cache USING gin(params);
+```
+
+#### `user_searches` - История поисков
+```sql
+CREATE TABLE user_searches (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  
+  -- Параметры поиска
+  search_type VARCHAR(50) NOT NULL, -- 'ports', 'schedules', 'deadlines', 'vessels'
+  origin_port_code VARCHAR(10),
+  destination_port_code VARCHAR(10),
+  search_query TEXT,
+  search_params JSONB NOT NULL DEFAULT '{}',
+  
+  -- Результаты
+  results_count INTEGER,
+  search_duration_ms INTEGER,
+  cache_hit BOOLEAN,
+  
+  -- Метаданные
+  user_agent TEXT,
+  ip_address INET,
+  session_id VARCHAR(100),
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_user_searches_user ON user_searches(user_id);
+CREATE INDEX idx_user_searches_type ON user_searches(search_type);
+CREATE INDEX idx_user_searches_route ON user_searches(origin_port_code, destination_port_code);
+CREATE INDEX idx_user_searches_date ON user_searches(created_at);
+CREATE INDEX idx_user_searches_params ON user_searches USING gin(search_params);
+```
+
+#### `user_favorites` - Избранное
+```sql
+CREATE TABLE user_favorites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  
+  -- Тип избранного
+  favorite_type VARCHAR(50) NOT NULL, -- 'route', 'vessel', 'port', 'sailing'
+  
+  -- Данные
+  favorite_data JSONB NOT NULL,
+  name VARCHAR(100),
+  notes TEXT,
+  
+  -- Метаданные
+  is_public BOOLEAN DEFAULT FALSE,
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- Уникальность
+  UNIQUE(user_id, favorite_type, (favorite_data->>'id'))
+);
+
+-- Индексы
+CREATE INDEX idx_user_favorites_user ON user_favorites(user_id);
+CREATE INDEX idx_user_favorites_type ON user_favorites(favorite_type);
+CREATE INDEX idx_user_favorites_data ON user_favorites USING gin(favorite_data);
+```
+
+#### `user_reminders` - Напоминания
+```sql
+CREATE TABLE user_reminders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  
+  -- Связанные данные
+  sailing_id UUID,
+  deadline_id UUID,
+  vessel_imo INTEGER REFERENCES vessels(vessel_imo_number),
+  
+  -- Напоминание
+  reminder_type VARCHAR(50) NOT NULL, -- 'deadline', 'departure', 'arrival'
+  title VARCHAR(200) NOT NULL,
+  description TEXT,
+  
+  -- Время
+  reminder_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  notify_before_hours INTEGER DEFAULT 24,
+  
+  -- Статус
+  is_active BOOLEAN DEFAULT TRUE,
+  is_sent BOOLEAN DEFAULT FALSE,
+  sent_at TIMESTAMP WITH TIME ZONE,
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_user_reminders_user ON user_reminders(user_id);
+CREATE INDEX idx_user_reminders_date ON user_reminders(reminder_date);
+CREATE INDEX idx_user_reminders_active ON user_reminders(is_active) WHERE is_active = TRUE;
+CREATE INDEX idx_user_reminders_vessel ON user_reminders(vessel_imo);
+```
+
+### 3. Мониторинг и аналитика
+
+#### `performance_metrics` - Метрики производительности
+```sql
+CREATE TABLE performance_metrics (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Запрос
+  endpoint VARCHAR(100) NOT NULL,
+  method VARCHAR(10) NOT NULL,
+  status_code INTEGER NOT NULL,
+  response_time_ms INTEGER NOT NULL,
+  
+  -- Данные
+  data_size_bytes INTEGER,
+  cache_hit BOOLEAN,
+  retries INTEGER DEFAULT 0,
+  
+  -- Ошибки
+  error_message TEXT,
+  error_code VARCHAR(50),
+  
+  -- Контекст
+  user_agent TEXT,
+  ip_address INET,
+  session_id VARCHAR(100),
+  user_id UUID REFERENCES users(id),
+  
+  -- Метаданные
+  api_provider VARCHAR(50), -- 'maersk', 'internal'
+  endpoint_type VARCHAR(50), -- 'ports', 'vessels', 'schedules', 'deadlines'
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_performance_metrics_endpoint ON performance_metrics(endpoint);
+CREATE INDEX idx_performance_metrics_status ON performance_metrics(status_code);
+CREATE INDEX idx_performance_metrics_time ON performance_metrics(created_at);
+CREATE INDEX idx_performance_metrics_session ON performance_metrics(session_id);
+CREATE INDEX idx_performance_metrics_provider ON performance_metrics(api_provider);
+CREATE INDEX idx_performance_metrics_user ON performance_metrics(user_id);
+```
+
+#### `analytics_events` - События аналитики
+```sql
+CREATE TABLE analytics_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Событие
+  event_type VARCHAR(100) NOT NULL, -- 'search_started', 'search_success', 'deadline_opened'
+  event_data JSONB,
+  
+  -- Контекст
+  user_id UUID REFERENCES users(id),
+  session_id VARCHAR(100),
+  page_url VARCHAR(500),
+  referrer VARCHAR(500),
+  user_agent TEXT,
+  ip_address INET,
+  
+  -- Метаданные
+  source VARCHAR(50), -- 'web', 'api', 'mobile'
+  version VARCHAR(20),
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_analytics_events_type ON analytics_events(event_type);
+CREATE INDEX idx_analytics_events_user ON analytics_events(user_id);
+CREATE INDEX idx_analytics_events_session ON analytics_events(session_id);
+CREATE INDEX idx_analytics_events_time ON analytics_events(created_at);
+CREATE INDEX idx_analytics_events_data ON analytics_events USING gin(event_data);
+```
+
+### 4. Конфигурация и управление
+
+#### `system_config` - Системная конфигурация
+```sql
+CREATE TABLE system_config (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Ключ конфигурации
+  config_key VARCHAR(100) UNIQUE NOT NULL,
+  config_value JSONB NOT NULL,
+  description TEXT,
+  
+  -- Метаданные
+  category VARCHAR(50), -- 'api', 'cache', 'feature_flags', 'limits'
+  is_active BOOLEAN DEFAULT TRUE,
+  is_sensitive BOOLEAN DEFAULT FALSE,
+  
+  -- Версионирование
+  version INTEGER DEFAULT 1,
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_system_config_key ON system_config(config_key);
+CREATE INDEX idx_system_config_category ON system_config(category);
+CREATE INDEX idx_system_config_active ON system_config(is_active) WHERE is_active = TRUE;
+```
+
+#### `feature_flags` - Feature Flags
+```sql
+CREATE TABLE feature_flags (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  
+  -- Флаг
+  flag_name VARCHAR(100) UNIQUE NOT NULL,
+  flag_value BOOLEAN NOT NULL DEFAULT FALSE,
+  description TEXT,
+  
+  -- Окружение
+  environment VARCHAR(20) DEFAULT 'production', -- 'development', 'staging', 'production'
+  
+  -- Метаданные
+  category VARCHAR(50), -- 'api', 'ui', 'performance', 'experimental'
+  owner VARCHAR(100),
+  
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Индексы
+CREATE INDEX idx_feature_flags_name ON feature_flags(flag_name);
+CREATE INDEX idx_feature_flags_environment ON feature_flags(environment);
+CREATE INDEX idx_feature_flags_category ON feature_flags(category);
+```
+
+### 5. Функции и триггеры
+
+#### Автоматическая очистка кэша
+```sql
+CREATE OR REPLACE FUNCTION cleanup_expired_cache()
+RETURNS void AS $$
+BEGIN
+  -- Очистка API кэша
+  DELETE FROM api_cache WHERE expires_at < NOW();
+  
+  -- Логирование
+  INSERT INTO analytics_events (event_type, event_data) 
+  VALUES ('cache_cleanup', jsonb_build_object('timestamp', NOW()));
+END;
+$$ LANGUAGE plpgsql;
+
+-- Планировщик (каждые 5 минут)
+SELECT cron.schedule('cleanup-cache', '*/5 * * * *', 'SELECT cleanup_expired_cache();');
+```
+
+#### Обновление времени доступа к кэшу
+```sql
+CREATE OR REPLACE FUNCTION update_cache_access()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.last_accessed = NOW();
+  NEW.access_count = OLD.access_count + 1;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_update_cache_access
+  BEFORE UPDATE ON api_cache
+  FOR EACH ROW
+  EXECUTE FUNCTION update_cache_access();
+```
+
+#### Автоматическое обновление updated_at
+```sql
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Применяем ко всем таблицам с updated_at
+CREATE TRIGGER trigger_update_updated_at
+  BEFORE UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER trigger_update_updated_at
+  BEFORE UPDATE ON user_favorites
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- И так далее для всех таблиц...
+```
+
+### 6. RLS (Row Level Security)
+
+```sql
+-- Включаем RLS для пользовательских таблиц
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_searches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_favorites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_reminders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
+
+-- Политики для пользователей
+CREATE POLICY "Users can view own data" ON users
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own data" ON users
+  FOR UPDATE USING (auth.uid() = id);
+
+-- Политики для поисков
+CREATE POLICY "Users can view own searches" ON user_searches
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own searches" ON user_searches
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Политики для избранного
+CREATE POLICY "Users can manage own favorites" ON user_favorites
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Политики для напоминаний
+CREATE POLICY "Users can manage own reminders" ON user_reminders
+  FOR ALL USING (auth.uid() = user_id);
+
+-- Политики для аналитики (только чтение своих событий)
+CREATE POLICY "Users can view own analytics" ON analytics_events
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Системные таблицы доступны только для сервисных ролей
+CREATE POLICY "System tables for service role" ON performance_metrics
+  FOR ALL USING (auth.role() = 'service_role');
+
+CREATE POLICY "System tables for service role" ON system_config
+  FOR ALL USING (auth.role() = 'service_role');
+
+-- Maersk данные доступны для чтения всем аутентифицированным пользователям
+CREATE POLICY "Allow authenticated read access" ON countries FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow authenticated read access" ON vessels FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow authenticated read access" ON locations FOR SELECT TO authenticated USING (true);
+-- И так далее для всех Maersk таблиц...
+```
+
+### 7. Представления для аналитики
+
+```sql
+-- Статистика кэша
+CREATE VIEW cache_stats AS
+SELECT 
+  cache_type,
+  COUNT(*) as total_entries,
+  AVG(data_size_bytes) as avg_size,
+  AVG(access_count) as avg_access_count,
+  MAX(created_at) as last_updated,
+  COUNT(*) FILTER (WHERE expires_at < NOW()) as expired_entries
+FROM api_cache 
+GROUP BY cache_type;
+
+-- Статистика API
+CREATE VIEW api_stats AS
+SELECT 
+  endpoint,
+  endpoint_type,
+  api_provider,
+  COUNT(*) as total_requests,
+  AVG(response_time_ms) as avg_response_time,
+  COUNT(*) FILTER (WHERE status_code >= 400) as error_count,
+  COUNT(*) FILTER (WHERE cache_hit = true) as cache_hits,
+  COUNT(*) FILTER (WHERE cache_hit = false) as cache_misses
+FROM performance_metrics 
+WHERE created_at > NOW() - INTERVAL '24 hours'
+GROUP BY endpoint, endpoint_type, api_provider;
+
+-- Популярные маршруты
+CREATE VIEW popular_routes AS
+SELECT 
+  origin_port_code,
+  destination_port_code,
+  COUNT(*) as search_count,
+  AVG(results_count) as avg_results,
+  MAX(created_at) as last_searched
+FROM user_searches 
+WHERE search_type = 'schedules'
+  AND created_at > NOW() - INTERVAL '30 days'
+GROUP BY origin_port_code, destination_port_code
+ORDER BY search_count DESC;
+
+-- Статистика пользователей
+CREATE VIEW user_activity AS
+SELECT 
+  user_id,
+  COUNT(*) as total_searches,
+  COUNT(DISTINCT DATE(created_at)) as active_days,
+  MAX(created_at) as last_activity,
+  AVG(search_duration_ms) as avg_search_time
+FROM user_searches 
+WHERE created_at > NOW() - INTERVAL '30 days'
+GROUP BY user_id;
+
+-- Статистика судов
+CREATE VIEW vessel_stats AS
+SELECT 
+  v.vessel_imo_number,
+  v.vessel_long_name,
+  v.vessel_capacity_teu,
+  COUNT(t.id) as transport_count,
+  COUNT(sd.id) as deadline_count,
+  MAX(t.created_at) as last_transport
+FROM vessels v
+LEFT JOIN transports t ON v.vessel_imo_number = t.vessel_imo_number
+LEFT JOIN shipment_deadlines sd ON v.vessel_imo_number = sd.vessel_imo_number
+GROUP BY v.vessel_imo_number, v.vessel_long_name, v.vessel_capacity_teu
+ORDER BY transport_count DESC;
+
+-- Статистика портов
+CREATE VIEW port_stats AS
+SELECT 
+  l.carrier_geo_id,
+  l.location_name,
+  l.city_name,
+  l.country_name,
+  COUNT(DISTINCT t.id) as transport_count,
+  COUNT(DISTINCT f.id) as facility_count,
+  MAX(t.created_at) as last_activity
+FROM locations l
+LEFT JOIN facilities f ON l.carrier_geo_id = f.carrier_site_geo_id
+LEFT JOIN transport_legs tl ON f.transport_leg_id = tl.id
+LEFT JOIN transports t ON tl.id = t.transport_leg_id
+WHERE l.location_type = 'PORT'
+GROUP BY l.carrier_geo_id, l.location_name, l.city_name, l.country_name
+ORDER BY transport_count DESC;
+```
+
+### 8. Миграции
+
+```sql
+-- migrations/001_unified_schema.sql
+BEGIN;
+
+-- Создаем все таблицы
+-- ... (весь SQL код выше)
+
+-- Создаем индексы
+-- ... (все индексы)
+
+-- Создаем функции и триггеры
+-- ... (все функции)
+
+-- Включаем RLS
+-- ... (все политики)
+
+-- Создаем представления
+-- ... (все представления)
+
+-- Вставляем начальные данные
+INSERT INTO system_config (config_key, config_value, description, category) VALUES
+('maersk_api_settings', '{"base_url": "https://api.maersk.com", "timeout": 10000, "retries": 3}', 'Настройки Maersk API', 'api'),
+('cache_settings', '{"default_ttl": 900, "max_size": 1000, "cleanup_interval": 300}', 'Настройки кэширования', 'cache'),
+('feature_flags', '{"live_api": true, "deadlines": true, "cache_enabled": true}', 'Feature flags', 'feature_flags'),
+('rate_limits', '{"requests_per_minute": 60, "burst_limit": 10}', 'Лимиты запросов', 'limits'),
+('telemetry_settings', '{"enabled": true, "sample_rate": 0.1, "retention_days": 30}', 'Настройки телеметрии', 'telemetry');
+
+INSERT INTO feature_flags (flag_name, flag_value, description, category) VALUES
+('FEATURE_MAERSK', true, 'Включить интеграцию с Maersk API', 'api'),
+('FEATURE_DEADLINES', true, 'Включить функционал дедлайнов', 'ui'),
+('CACHE_ENABLED', true, 'Включить кэширование', 'performance'),
+('TELEMETRY_ENABLED', true, 'Включить телеметрию', 'performance'),
+('DEMO_MODE', false, 'Режим демонстрации', 'experimental'),
+('ADVANCED_SEARCH', false, 'Расширенный поиск', 'ui');
+
+COMMIT;
+```
+
+## Преимущества унифицированной схемы
+
+### 1. **Полная совместимость с Prisma**
+- Сохранена вся нормализованная структура Maersk API
+- Поддержка всех существующих типов данных
+- Возможность использования Prisma ORM
+
+### 2. **Расширенная функциональность**
+- Добавлены пользовательские данные и кэширование
+- Мониторинг производительности и аналитика
+- Feature flags и конфигурация
+
+### 3. **Производительность**
+- Оптимизированные индексы для всех таблиц
+- Полнотекстовый поиск для портов и судов
+- Эффективное кэширование с TTL
+
+### 4. **Масштабируемость**
+- Автоматическая очистка устаревших данных
+- Партиционирование по датам для больших таблиц
+- Мониторинг производительности
+
+### 5. **Безопасность**
+- RLS политики для защиты данных пользователей
+- Разделение системных и пользовательских данных
+- Аудит действий пользователей
+
+### 6. **Аналитика**
+- Детальная статистика использования
+- Популярные маршруты и порты
+- Производительность API и кэша
+
+### 7. **Гибкость**
+- Feature flags для управления функциональностью
+- Конфигурация через базу данных
+- Поддержка различных окружений
+
+Эта унифицированная схема объединяет лучшее из обеих подходов и готова для продакшен использования!

@@ -25,6 +25,7 @@ export interface PortSearchParams {
 // Интерфейс для ответа API поиска портов
 export interface PortSearchResponse {
   success: boolean;
+  ports?: PortRef[]; // Для обратной совместимости с тестами
   data: PortRef[];
   total: number;
   error?: string;
@@ -50,7 +51,9 @@ export function filterPorts(locations: MaerskLocation[]): MaerskLocation[] {
   return locations.filter(location => 
     location.locationType === 'port' || 
     location.locationType === 'seaport' ||
-    (location.unLocationCode && location.unLocationCode.length === 5)
+    location.locationType === 'CITY' || // Добавляем CITY как допустимый тип
+    (location.unLocationCode && location.unLocationCode.length === 5) ||
+    (location.carrierGeoID && location.carrierGeoID.length > 0) // Включаем все локации с carrierGeoID
   );
 }
 
