@@ -18,10 +18,18 @@ export interface Sailing {
   originPort: PortRef;
   /** Порт назначения */
   destinationPort: PortRef;
-  /** Дата отправления */
+  /** Дата отправления (UTC) */
   departureDate: Date;
-  /** Дата прибытия */
+  /** Дата прибытия (UTC) */
   arrivalDate: Date;
+  /** Локальное время отправления */
+  departureLocalTime?: string;
+  /** Локальное время прибытия */
+  arrivalLocalTime?: string;
+  /** Таймзона порта отправления */
+  originTimezone?: string;
+  /** Таймзона порта назначения */
+  destinationTimezone?: string;
   /** Тип контейнера */
   containerType: ContainerType;
   /** Доступная вместимость (TEU) */

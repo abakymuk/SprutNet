@@ -19,6 +19,8 @@ export interface PortRef {
   type: PortType;
   /** Координаты порта */
   coordinates?: Coordinates;
+  /** Таймзона порта (например, 'Europe/Moscow', 'Asia/Shanghai') */
+  timezone?: string;
   /** Активен ли порт */
   isActive: boolean;
   /** Дата создания записи */

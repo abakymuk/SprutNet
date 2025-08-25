@@ -82,6 +82,8 @@ import { VesselCard } from "./vessel-card";
 import { FallbackButton } from "@/components/ui/fallback-button";
 import { ResultsSkeleton } from "./results-skeleton";
 import { ErrorState, EmptyState } from "./error-states";
+import { TimeDisplay } from "@/components/ui/time-display";
+import { TimezoneInfo } from "@/components/ui/timezone-info";
 
 interface SailingResultsProps {
   sailings: Sailing[];
@@ -761,24 +763,26 @@ export function SailingResults({
                           <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-4 w-4 text-primary" />
                             <span className="font-medium">ETD:</span>
-                            <span>
-                              {format(
-                                new Date(sailing.departureDate),
-                                "dd.MM.yyyy",
-                                { locale: ru }
-                              )}
-                            </span>
+                            <TimeDisplay
+                              utcDate={new Date(sailing.departureDate)}
+                              timezone={sailing.originPort?.timezone || "UTC"}
+                              showUTC={false}
+                              size="sm"
+                              showIcon={false}
+                            />
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <Calendar className="h-4 w-4 text-primary" />
                             <span className="font-medium">ETA:</span>
-                            <span>
-                              {format(
-                                new Date(sailing.arrivalDate),
-                                "dd.MM.yyyy",
-                                { locale: ru }
-                              )}
-                            </span>
+                            <TimeDisplay
+                              utcDate={new Date(sailing.arrivalDate)}
+                              timezone={
+                                sailing.destinationPort?.timezone || "UTC"
+                              }
+                              showUTC={false}
+                              size="sm"
+                              showIcon={false}
+                            />
                           </div>
                           <div className="flex items-center gap-2 text-sm">
                             <Clock className="h-4 w-4 text-primary" />

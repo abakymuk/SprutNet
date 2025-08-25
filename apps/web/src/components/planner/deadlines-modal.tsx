@@ -32,6 +32,8 @@ import {
 } from "lucide-react";
 import { NotificationSettings } from "./notification-settings";
 import { NotificationTest } from "./notification-test";
+import { TimeDisplay } from "@/components/ui/time-display";
+import { TimezoneInfo } from "@/components/ui/timezone-info";
 import type { Sailing } from "@sprutnet/shared/types";
 
 interface Deadline {
@@ -333,9 +335,22 @@ export function DeadlinesModal({ sailing, children }: DeadlinesModalProps) {
                     {sailing.destinationPort?.name}
                   </span>
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Отправление:{" "}
-                  {new Date(sailing.departureDate).toLocaleDateString("ru-RU")}
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-muted-foreground">
+                    <TimeDisplay
+                      utcDate={new Date(sailing.departureDate)}
+                      timezone={sailing.originPort?.timezone || "UTC"}
+                      showUTC={true}
+                      size="sm"
+                      showIcon={false}
+                    />
+                  </div>
+                  {sailing.originPort?.timezone && (
+                    <TimezoneInfo
+                      timezone={sailing.originPort.timezone}
+                      size="sm"
+                    />
+                  )}
                 </div>
               </div>
 
@@ -383,7 +398,13 @@ export function DeadlinesModal({ sailing, children }: DeadlinesModalProps) {
                           </TableCell>
                           <TableCell>
                             <div className="text-sm">
-                              {formatLocalTime(deadline.deadlineLocal)}
+                              <TimeDisplay
+                                utcDate={new Date(deadline.deadlineLocal)}
+                                timezone={sailing.originPort?.timezone || "UTC"}
+                                showUTC={false}
+                                size="sm"
+                                showIcon={false}
+                              />
                             </div>
                           </TableCell>
                           <TableCell>
