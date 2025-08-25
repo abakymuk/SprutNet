@@ -145,11 +145,15 @@ jobs:
           pnpm install --fetch-retries=6 --fetch-timeout=60000
         
       - name: Security audit
-        run: pnpm audit --audit-level high
+        run: |
+          echo "🔍 Switching to official npm registry for security audit..."
+          pnpm set registry https://registry.npmjs.org
+          pnpm audit --audit-level high
         
       - name: Check for known vulnerabilities
         run: |
           echo "🔍 Checking for known vulnerabilities..."
+          pnpm set registry https://registry.npmjs.org
           pnpm audit --audit-level moderate || {
             echo "⚠️  Found moderate or higher vulnerabilities"
             echo "Please review and fix security issues"
