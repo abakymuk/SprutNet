@@ -45,14 +45,17 @@ jobs:
         with:
           version: '8'
           
+      - name: Use npm registry mirror
+        run: pnpm set registry https://registry.npmmirror.com
+        
       - name: Install dependencies
         run: |
           echo "📦 Installing dependencies..."
           echo "📁 Current directory: $(pwd)"
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
-          echo "🚀 Running pnpm install..."
-          pnpm install
+          echo "🚀 Running pnpm install with retry options..."
+          pnpm install --fetch-retries=6 --fetch-timeout=60000 --network-timeout=60000
         
       - name: Install Supabase CLI
         run: |
@@ -121,14 +124,17 @@ jobs:
         with:
           version: '8'
           
+      - name: Use npm registry mirror
+        run: pnpm set registry https://registry.npmmirror.com
+        
       - name: Install dependencies
         run: |
           echo "📦 Installing dependencies..."
           echo "📁 Current directory: $(pwd)"
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
-          echo "🚀 Running pnpm install..."
-          pnpm install
+          echo "🚀 Running pnpm install with retry options..."
+          pnpm install --fetch-retries=6 --fetch-timeout=60000 --network-timeout=60000
         
       - name: Reset database
         run: |
@@ -164,14 +170,17 @@ jobs:
         with:
           version: '8'
           
+      - name: Use npm registry mirror
+        run: pnpm set registry https://registry.npmmirror.com
+        
       - name: Install dependencies
         run: |
           echo "📦 Installing dependencies..."
           echo "📁 Current directory: $(pwd)"
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
-          echo "🚀 Running pnpm install..."
-          pnpm install
+          echo "🚀 Running pnpm install with retry options..."
+          pnpm install --fetch-retries=6 --fetch-timeout=60000 --network-timeout=60000
         
       - name: Seed database
         run: |
