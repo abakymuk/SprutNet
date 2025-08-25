@@ -17,6 +17,8 @@ import {
   Info,
   CheckCircle,
 } from "lucide-react";
+import { extractErrorCode, shouldShowFallback } from "@/lib/errors/handlers";
+import { getErrorMessage } from "@/lib/errors/messages";
 
 interface FallbackButtonProps {
   /** Текущий источник данных */
@@ -145,11 +147,31 @@ export function FallbackButton({
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             <div className="space-y-1">
-              <p className="font-medium">Ошибка API:</p>
-              <p className="text-sm">{error}</p>
-              <p className="text-xs text-muted-foreground">
-                Нажмите кнопку выше для переключения на демо-данные
+              <p className="font-medium">
+                {(() => {
+                  const errorCode = extractErrorCode(error);
+                  const errorMessage = getErrorMessage(errorCode);
+                  return errorMessage.title;
+                })()}
               </p>
+              <p className="text-sm">
+                {(() => {
+                  const errorCode = extractErrorCode(error);
+                  const errorMessage = getErrorMessage(errorCode);
+                  return errorMessage.message;
+                })()}
+              </p>
+              {(() => {
+                const errorCode = extractErrorCode(error);
+                const errorMessage = getErrorMessage(errorCode);
+                return (
+                  errorMessage.suggestion && (
+                    <p className="text-xs text-muted-foreground">
+                      {errorMessage.suggestion}
+                    </p>
+                  )
+                );
+              })()}
             </div>
           </AlertDescription>
         </Alert>

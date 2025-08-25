@@ -79,6 +79,7 @@ import { cn } from "@/lib/utils";
 import type { PortRef } from "@sprutnet/shared/types";
 import { useSearchContext } from "@/contexts/search-context";
 import { SearchSkeleton } from "./search-skeleton";
+import { logSearchStarted, logSearchSuccess, logSearchError } from "@/lib/telemetry/logger";
 
 interface SearchFormProps {
   onSearch: (
@@ -211,8 +212,20 @@ export function SearchForm({ onSearch, isLoading }: SearchFormProps) {
 
     if (!originPort || !destinationPort) {
       console.log("❌ SearchForm: Ports not selected");
+      logSearchError("Ports not selected", {
+        originPort: originPort?.id,
+        destinationPort: destinationPort?.id,
+      });
       return;
     }
+
+    // Логируем начало поиска
+    logSearchStarted({
+      originPort: originPort.id,
+      destinationPort: destinationPort.id,
+      departureDateFrom: departureDateFrom?.toISOString(),
+      departureDateTo: departureDateTo?.toISOString(),
+    });
 
     onSearch(
       originPort,

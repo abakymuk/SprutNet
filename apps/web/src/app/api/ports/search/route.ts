@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
       const locationsResponse = await Maersk.fetch('/reference-data/locations', {
         cache: true, // Используем кэш для оптимизации
         timeout: 10000, // 10 секунд timeout
+        endpointType: 'ports',
+        params: { query, limit },
       });
 
       if (!locationsResponse.data || !Array.isArray(locationsResponse.data)) {

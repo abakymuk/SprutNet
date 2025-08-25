@@ -60,6 +60,8 @@ export async function GET(request: Request) {
           method: 'GET',
           cache: true,
           timeout: 15000,
+          endpointType: 'deadlines',
+          params: maerskParams,
         });
 
         console.log('📊 Ответ от Maersk Deadlines API:', maerskResponse);

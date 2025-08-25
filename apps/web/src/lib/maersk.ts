@@ -1,4 +1,13 @@
 import { getMaerskHeaders } from './maersk-api';
+import { 
+  CacheMetrics, 
+  ApiMetrics, 
+  logCacheMetrics, 
+  logApiMetrics,
+  ENDPOINT_CONFIG,
+  generateCacheKey 
+} from './types/metrics';
+import { logCacheHit, logCacheMiss, logApiRetry, logApiError, logApiSuccess } from './telemetry/logger';
 
 // Интерфейсы для типизации
 export interface MaerskRequestConfig {
@@ -8,6 +17,8 @@ export interface MaerskRequestConfig {
   cache?: boolean;
   retries?: number;
   timeout?: number;
+  endpointType?: 'schedules' | 'deadlines' | 'ports' | 'vessels';
+  params?: Record<string, any>;
 }
 
 export interface MaerskResponse<T = any> {
@@ -100,6 +111,12 @@ function logEvent(event: string, details: any = {}): void {
 
 // Генерация ключа кэша
 function getCacheKey(url: string, config: MaerskRequestConfig): string {
+  // Если есть endpointType и params, используем новую генерацию ключа
+  if (config.endpointType && config.params) {
+    return generateCacheKey(config.endpointType, config.params);
+  }
+  
+  // Fallback к старому методу
   const method = config.method || 'GET';
   const body = config.body ? JSON.stringify(config.body) : '';
   return `${method}:${url}:${body}`;
@@ -125,15 +142,37 @@ export class MaerskClient {
     endpoint: string,
     config: MaerskRequestConfig = {}
   ): Promise<MaerskResponse<T>> {
+    const startTime = Date.now();
     const url = `${this.baseURL}${endpoint}`;
     const cacheKey = getCacheKey(url, config);
-    const shouldCache = config.cache !== false && (config.method || 'GET') === 'GET';
+    
+    // Определяем конфигурацию кэша на основе endpointType
+    const endpointType = config.endpointType || 'schedules';
+    const cacheConfig = ENDPOINT_CONFIG[endpointType];
+    const shouldCache = config.cache !== false && 
+                       (config.method || 'GET') === 'GET' && 
+                       cacheConfig.enabled;
 
     // Проверяем кэш для GET-запросов
     if (shouldCache) {
       const cachedData = this.cache.get(cacheKey);
       if (cachedData) {
-        logEvent('cache_hit', { url, cacheKey });
+        const latency = Date.now() - startTime;
+        
+        // Логируем метрики кэша
+        const cacheMetrics: CacheMetrics = {
+          cacheHit: true,
+          resultCount: Array.isArray(cachedData) ? cachedData.length : 1,
+          latency,
+          endpoint: endpointType,
+          timestamp: new Date(),
+          cacheKey,
+          ttl: cacheConfig.ttl,
+        };
+        logCacheMetrics(cacheMetrics);
+        
+        // Логируем телеметрию кэша
+        logCacheHit(endpointType, { url, cacheKey, latency });
         return {
           data: cachedData,
           status: 200,
@@ -144,8 +183,13 @@ export class MaerskClient {
       }
     }
 
+    // Логируем cache miss если кэш включен
+    if (shouldCache) {
+      logCacheMiss(endpointType, { url, cacheKey });
+    }
+    
     // Выполняем запрос с ретраями
-    const response = await this._makeRequest(url, config, cacheKey, shouldCache);
+    const response = await this._makeRequest(url, config, cacheKey, shouldCache, startTime, endpointType);
     return response;
   }
 
@@ -154,6 +198,8 @@ export class MaerskClient {
     config: MaerskRequestConfig,
     cacheKey: string,
     shouldCache: boolean,
+    startTime: number,
+    endpointType: string,
     attempt: number = 1
   ): Promise<MaerskResponse<T>> {
     try {
@@ -179,13 +225,28 @@ export class MaerskClient {
       // Обрабатываем успешный ответ
       if (response.ok) {
         const data = await response.json();
+        const latency = Date.now() - startTime;
         
         // Сохраняем в кэш
         if (shouldCache) {
-          this.cache.set(cacheKey, data);
+          const cacheConfig = ENDPOINT_CONFIG[endpointType as keyof typeof ENDPOINT_CONFIG];
+          this.cache.set(cacheKey, data, cacheConfig.ttl);
         }
 
-        logEvent('api_success', { url, status: response.status, cached: shouldCache });
+        // Логируем метрики API
+        const apiMetrics: ApiMetrics = {
+          endpoint: endpointType,
+          method: config.method || 'GET',
+          status: response.status,
+          latency,
+          retries: attempt - 1,
+          cached: false,
+          timestamp: new Date(),
+        };
+        logApiMetrics(apiMetrics);
+
+        // Логируем телеметрию API успеха
+        logApiSuccess(endpointType, latency, { url, status: response.status, cached: shouldCache });
         
         return {
           data,
@@ -201,20 +262,22 @@ export class MaerskClient {
       
       if (shouldRetry) {
         const delay = calculateDelay(attempt);
-        logEvent('api_retry', { 
+        
+        // Логируем телеметрию API ретрая
+        logApiRetry(endpointType, attempt, { 
           url, 
           status: response.status, 
-          attempt, 
           delay,
           maxRetries: DEFAULT_CONFIG.maxRetries 
         });
 
         await new Promise(resolve => setTimeout(resolve, delay));
-        return this._makeRequest(url, config, cacheKey, shouldCache, attempt + 1);
+        return this._makeRequest(url, config, cacheKey, shouldCache, startTime, endpointType, attempt + 1);
       }
 
       // Обрабатываем ошибки без ретраев
       const errorData = await response.json().catch(() => ({}));
+      const latency = Date.now() - startTime;
       const error: MaerskError = {
         code: this._getErrorCode(response.status),
         message: this._getErrorMessage(response.status, errorData),
@@ -223,10 +286,26 @@ export class MaerskClient {
         retries: attempt - 1,
       };
 
-      logEvent('api_error', { url, error });
+      // Логируем метрики API с ошибкой
+      const apiMetrics: ApiMetrics = {
+        endpoint: endpointType,
+        method: config.method || 'GET',
+        status: response.status,
+        latency,
+        retries: attempt - 1,
+        cached: false,
+        timestamp: new Date(),
+        error: error.message,
+      };
+      logApiMetrics(apiMetrics);
+
+      // Логируем телеметрию API ошибки
+      logApiError(endpointType, error.message, response.status, { url, latency });
       throw error;
 
     } catch (error: any) {
+      const latency = Date.now() - startTime;
+      
       // Обрабатываем сетевые ошибки и timeout
       if (error.name === 'AbortError') {
         const timeoutError: MaerskError = {
@@ -236,12 +315,39 @@ export class MaerskClient {
           details: { timeout: config.timeout || DEFAULT_CONFIG.timeout },
           retries: attempt - 1,
         };
-        logEvent('api_error', { url, error: timeoutError });
+        
+        // Логируем метрики API с ошибкой timeout
+        const apiMetrics: ApiMetrics = {
+          endpoint: endpointType,
+          method: config.method || 'GET',
+          status: 0,
+          latency,
+          retries: attempt - 1,
+          cached: false,
+          timestamp: new Date(),
+          error: timeoutError.message,
+        };
+        logApiMetrics(apiMetrics);
+        
+        logEvent('api_error', { url, error: timeoutError, latency });
         throw timeoutError;
       }
 
       if (error.code) {
         // Это уже наша структурированная ошибка
+        // Логируем метрики API с существующей ошибкой
+        const apiMetrics: ApiMetrics = {
+          endpoint: endpointType,
+          method: config.method || 'GET',
+          status: error.status || 0,
+          latency,
+          retries: attempt - 1,
+          cached: false,
+          timestamp: new Date(),
+          error: error.message,
+        };
+        logApiMetrics(apiMetrics);
+        
         throw error;
       }
 
@@ -253,7 +359,21 @@ export class MaerskClient {
         details: { originalError: error.message },
         retries: attempt - 1,
       };
-      logEvent('api_error', { url, error: unknownError });
+      
+      // Логируем метрики API с неизвестной ошибкой
+      const apiMetrics: ApiMetrics = {
+        endpoint: endpointType,
+        method: config.method || 'GET',
+        status: 0,
+        latency,
+        retries: attempt - 1,
+        cached: false,
+        timestamp: new Date(),
+        error: unknownError.message,
+      };
+      logApiMetrics(apiMetrics);
+      
+      logEvent('api_error', { url, error: unknownError, latency });
       throw unknownError;
     }
   }

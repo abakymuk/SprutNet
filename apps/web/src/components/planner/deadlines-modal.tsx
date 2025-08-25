@@ -34,6 +34,11 @@ import { NotificationSettings } from "./notification-settings";
 import { NotificationTest } from "./notification-test";
 import { TimeDisplay } from "@/components/ui/time-display";
 import { TimezoneInfo } from "@/components/ui/timezone-info";
+import {
+  logDeadlineOpened,
+  logDeadlineError,
+  logDeadlineSuccess,
+} from "@/lib/telemetry/logger";
 import type { Sailing } from "@sprutnet/shared/types";
 
 interface Deadline {
@@ -189,9 +194,25 @@ export function DeadlinesModal({ sailing, children }: DeadlinesModalProps) {
       const data = await response.json();
       console.log("📅 Deadlines data:", data);
       setDeadlines(data.deadlines || []);
+
+      // Логируем успешное получение дедлайнов
+      logDeadlineSuccess(sailing.id, data.deadlines?.length || 0, {
+        vesselImo: sailing.vessel?.imoNumber,
+        voyage: sailing.voyageNumber,
+      });
     } catch (err) {
       console.error("❌ Error fetching deadlines:", err);
       setError("Ошибка при загрузке дедлайнов");
+
+      // Логируем ошибку дедлайнов
+      logDeadlineError(
+        err instanceof Error ? err.message : "Unknown error",
+        sailing.id,
+        {
+          vesselImo: sailing.vessel?.imoNumber,
+          voyage: sailing.voyageNumber,
+        }
+      );
     } finally {
       setIsLoading(false);
     }
@@ -203,6 +224,12 @@ export function DeadlinesModal({ sailing, children }: DeadlinesModalProps) {
       sailingId: sailing.id,
     });
     if (isOpen) {
+      // Логируем открытие дедлайнов
+      logDeadlineOpened(sailing.id, {
+        vesselImo: sailing.vessel?.imoNumber,
+        voyage: sailing.voyageNumber,
+        originPort: sailing.originPort?.name,
+      });
       fetchDeadlines();
     }
   }, [isOpen, sailing.id, fetchDeadlines]);

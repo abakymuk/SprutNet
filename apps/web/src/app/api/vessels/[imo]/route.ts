@@ -59,6 +59,8 @@ export async function GET(
           method: 'GET',
           cache: true,
           timeout: 15000,
+          endpointType: 'vessels',
+          params: { imo, limit: 1 },
         });
 
         console.log('📊 Ответ от Maersk Vessels API:', maerskResponse);

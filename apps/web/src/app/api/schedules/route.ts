@@ -8,6 +8,7 @@ import {
   type MaerskScheduleSearchParams,
   type MaerskScheduleResponse 
 } from '@/lib/types/schedules';
+import { logSearchStarted, logSearchSuccess, logSearchError } from '@/lib/telemetry/logger';
 
 /**
  * GET /api/schedules
@@ -16,6 +17,14 @@ import {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    
+    // Логируем начало поиска
+    logSearchStarted({
+      originPort: searchParams.get('originPortId') || undefined,
+      destinationPort: searchParams.get('destinationPortId') || undefined,
+      departureDateFrom: searchParams.get('departureDateFrom') || undefined,
+      departureDateTo: searchParams.get('departureDateTo') || undefined,
+    });
     
     // Парсим параметры запроса
     const originPortId = searchParams.get('originPortId');
@@ -73,6 +82,8 @@ export async function GET(request: NextRequest) {
           method: 'GET',
           cache: true,
           timeout: 15000,
+          endpointType: 'schedules',
+          params: maerskParams,
         });
         
         console.log('📊 Ответ от Maersk API:', maerskResponse);
@@ -310,10 +321,23 @@ export async function POST(request: NextRequest) {
         };
         
         console.log(`✅ POST возвращаем ${paginatedSailings.length} расписаний из ${sailings.length} найденных`);
+        
+        // Логируем успешный поиск
+        logSearchSuccess(paginatedSailings.length, {
+          total: sailings.length,
+          dataSource: 'maersk',
+        });
+        
         return NextResponse.json(response, { status: 200 });
         
       } catch (error: any) {
         console.error('❌ Ошибка при POST запросе к Maersk API:', error);
+        
+        // Логируем ошибку поиска
+        logSearchError(error.message || 'Maersk API error', {
+          dataSource: 'maersk',
+          fallback: true,
+        });
         
         // Fallback на мок-данные при ошибке
         console.log('🔄 POST используем fallback на мок-данные');

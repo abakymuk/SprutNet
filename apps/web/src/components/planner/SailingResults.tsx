@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -81,9 +81,11 @@ import { DeadlinesModal } from "./deadlines-modal";
 import { VesselCard } from "./vessel-card";
 import { FallbackButton } from "@/components/ui/fallback-button";
 import { ResultsSkeleton } from "./results-skeleton";
-import { ErrorState, EmptyState } from "./error-states";
+import { ErrorState, EmptyState, FallbackState } from "./error-states";
+import { extractErrorCode, shouldShowFallback } from "@/lib/errors/handlers";
 import { TimeDisplay } from "@/components/ui/time-display";
 import { TimezoneInfo } from "@/components/ui/timezone-info";
+import { logSearchSuccess } from "@/lib/telemetry/logger";
 
 interface SailingResultsProps {
   sailings: Sailing[];
@@ -267,6 +269,22 @@ export function SailingResults({
   const cheapestSailing = [...filteredSailings].sort(
     (a, b) => (a.rates[0]?.totalCost || 0) - (b.rates[0]?.totalCost || 0)
   )[0];
+
+  // Логируем успешный поиск при наличии результатов
+  useEffect(() => {
+    if (sailings.length > 0 && !isLoading && hasSearched) {
+      logSearchSuccess(sailings.length, {
+        filteredCount: filteredSailings.length,
+        dataSource,
+      });
+    }
+  }, [
+    sailings.length,
+    isLoading,
+    hasSearched,
+    filteredSailings.length,
+    dataSource,
+  ]);
   const bestSailing = [...filteredSailings].sort((a, b) => {
     const aScore = a.route.duration * 0.6 + (a.rates[0]?.totalCost || 0) * 0.4;
     const bScore = b.route.duration * 0.6 + (b.rates[0]?.totalCost || 0) * 0.4;
@@ -343,6 +361,23 @@ export function SailingResults({
             <span>Используйте форму поиска выше</span>
           </div>
         }
+      />
+    );
+  }
+
+  // Обрабатываем ошибки
+  if (error) {
+    const errorCode = extractErrorCode(error);
+    const shouldShowFallbackOption = shouldShowFallback(error);
+
+    return (
+      <ErrorState
+        errorCode={errorCode}
+        onRetry={onSwitchToMock}
+        onUseDemo={onSwitchToMock}
+        showFallback={shouldShowFallbackOption}
+        showRetry={true}
+        showFixData={false}
       />
     );
   }
