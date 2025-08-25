@@ -56,14 +56,18 @@ jobs:
         
       - name: Install Supabase CLI
         run: |
-          curl -fsSL https://supabase.com/install.sh | sh
+          echo "📦 Installing Supabase CLI from GitHub releases..."
+          wget https://github.com/supabase/cli/releases/latest/download/supabase_linux_amd64.tar.gz
+          tar -xzf supabase_linux_amd64.tar.gz
+          chmod +x supabase
+          mv supabase $HOME/.local/bin/
           export PATH="$HOME/.local/bin:$PATH"
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          echo "✅ Supabase CLI installed"
           
       - name: Check Supabase CLI
         run: |
           echo "🔧 Checking Supabase CLI installation..."
-          export PATH="$HOME/.local/bin:$PATH"
           which supabase
           supabase --version
           

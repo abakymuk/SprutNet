@@ -61,7 +61,7 @@ jobs:
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
+          path: ${{ env.STORE_PATH || '$HOME/.local/share/pnpm/store' }}
           key: ${{ needs.setup.outputs.cache-key }}
           restore-keys: |
             node-${{ runner.os }}-
