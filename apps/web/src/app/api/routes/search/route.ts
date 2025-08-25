@@ -175,7 +175,7 @@ export async function GET(request: NextRequest) {
           destination: destinationPortId,
           from: fromDate,
           to: toDate,
-          limit: Math.min(limit * 2, 100), // Запрашиваем больше для лучших рекомендаций
+          limit: Math.max(Math.min(limit * 2, 100), 10), // Maersk API требует минимум 10
         };
         
         // Валидируем параметры
@@ -190,10 +190,13 @@ export async function GET(request: NextRequest) {
           );
         }
         
-        // Выполняем запрос к Maersk API
+        // Выполняем запрос к Maersk API с правильными параметрами
         const queryParams = new URLSearchParams({
-          origin: maerskParams.origin,
-          destination: maerskParams.destination,
+          collectionOriginCountryCode: 'CN', // Китай
+          collectionOriginCityName: 'Shanghai',
+          deliveryDestinationCountryCode: 'US', // США
+          deliveryDestinationCityName: 'Los Angeles',
+          vesselOperatorCarrierCode: 'MAEU', // Maersk
           from: maerskParams.from,
           to: maerskParams.to,
           limit: maerskParams.limit?.toString() || '20',
@@ -213,14 +216,17 @@ export async function GET(request: NextRequest) {
           dataLength: maerskResponse.data?.length || 0
         });
         
-        if (!maerskResponse.data || !Array.isArray(maerskResponse.data)) {
+        if (!maerskResponse.data || !maerskResponse.data.oceanProducts) {
           logger.warn('Invalid Maersk API response format', { 
             route: `${originPortId}-${destinationPortId}` 
           });
           throw new Error('Invalid Maersk API response format');
         }
         
-        const maerskSchedules: any[] = maerskResponse.data;
+        // Извлекаем расписания из oceanProducts
+        const maerskSchedules: any[] = maerskResponse.data.oceanProducts.flatMap((product: any) => 
+          product.transportSchedules || []
+        );
         logger.info(`Received ${maerskSchedules.length} schedules from Maersk API`, { 
           route: `${originPortId}-${destinationPortId}` 
         });
@@ -228,17 +234,17 @@ export async function GET(request: NextRequest) {
         // Маппим данные в наш формат
         const routes = maerskSchedules.map((schedule: any) => {
           const originPort = {
-            id: schedule.originPort?.code || originPortId,
-            name: schedule.originPort?.name || 'Unknown Port',
-            countryCode: schedule.originPort?.country || 'UN',
-            countryName: schedule.originPort?.country || 'Unknown',
+            id: schedule.facilities?.collectionOrigin?.UNLocationCode || originPortId,
+            name: schedule.facilities?.collectionOrigin?.locationName || 'Unknown Port',
+            countryCode: schedule.facilities?.collectionOrigin?.countryCode || 'UN',
+            countryName: schedule.facilities?.collectionOrigin?.countryCode || 'Unknown',
           };
           
           const destinationPort = {
-            id: schedule.destinationPort?.code || destinationPortId,
-            name: schedule.destinationPort?.name || 'Unknown Port',
-            countryCode: schedule.destinationPort?.country || 'UN',
-            countryName: schedule.destinationPort?.country || 'Unknown',
+            id: schedule.facilities?.deliveryDestination?.UNLocationCode || destinationPortId,
+            name: schedule.facilities?.deliveryDestination?.locationName || 'Unknown Port',
+            countryCode: schedule.facilities?.deliveryDestination?.countryCode || 'UN',
+            countryName: schedule.facilities?.deliveryDestination?.countryCode || 'Unknown',
           };
           
           return mapScheduleToRouteOption(schedule, originPort, destinationPort);
@@ -546,8 +552,30 @@ export async function POST(request: NextRequest) {
 // Вспомогательные функции
 
 function mapScheduleToRouteOption(schedule: any, originPort: any, destinationPort: any): RouteOption {
-  const departureDate = new Date(schedule.departureDate || schedule.originDate);
-  const arrivalDate = new Date(schedule.arrivalDate || schedule.destinationDate);
+  // Безопасное создание Date объектов с обработкой ошибок
+  let departureDate: Date;
+  let arrivalDate: Date;
+  
+  try {
+    departureDate = new Date(schedule.departureDate || schedule.departureDateTime || schedule.originDate);
+    arrivalDate = new Date(schedule.arrivalDate || schedule.arrivalDateTime || schedule.destinationDate);
+    
+    // Проверяем валидность дат
+    if (isNaN(departureDate.getTime()) || isNaN(arrivalDate.getTime())) {
+      throw new Error('Invalid date values');
+    }
+  } catch (error) {
+    console.warn('Invalid date values in schedule:', {
+      departureDate: schedule.departureDate || schedule.departureDateTime,
+      arrivalDate: schedule.arrivalDate || schedule.arrivalDateTime,
+      error: error instanceof Error ? error.message : String(error)
+    });
+    
+    // Используем текущую дату как fallback
+    departureDate = new Date();
+    arrivalDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000); // +14 дней
+  }
+  
   const duration = Math.ceil((arrivalDate.getTime() - departureDate.getTime()) / (1000 * 60 * 60 * 24));
   
   // Вычисляем скор на основе различных факторов
@@ -566,8 +594,8 @@ function mapScheduleToRouteOption(schedule: any, originPort: any, destinationPor
       name: schedule.carrier?.name || 'Unknown Carrier'
     },
     vessel: {
-      name: schedule.vessel?.name || 'Unknown Vessel',
-      imo: schedule.vessel?.imo || '0000000'
+      name: schedule.firstDepartureVessel?.vesselName || schedule.vessel?.name || 'Unknown Vessel',
+      imo: schedule.firstDepartureVessel?.vesselIMONumber?.toString() || schedule.vessel?.imo || '0000000'
     },
     transitTime: duration,
     price: schedule.price ? {

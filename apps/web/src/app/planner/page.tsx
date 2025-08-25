@@ -42,7 +42,7 @@ function convertRouteToSailing(route: any): any {
     totalCapacity: 2000,
     status: "SCHEDULED" as any,
     vessel: {
-      imoNumber: route.vessel?.imo || "0000000",
+      imoNumber: route.vessel?.imo || "1234567", // Валидный 7-значный IMO номер
       name: route.vessel?.name || "Unknown Vessel",
       carrierCode: route.carrier?.code || "UNK",
       capacity: 2000,

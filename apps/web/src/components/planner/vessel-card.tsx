@@ -46,6 +46,14 @@ export function VesselCard({ imo, children }: VesselCardProps) {
   const fetchVesselInfo = useCallback(async () => {
     if (!imo) return;
 
+    // Валидация IMO номера
+    if (!/^\d{7}$/.test(imo)) {
+      console.warn("⚠️ Invalid IMO number format:", imo);
+      setError("Некорректный формат IMO номера");
+      setIsLoading(false);
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 

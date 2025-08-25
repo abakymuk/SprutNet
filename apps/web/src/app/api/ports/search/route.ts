@@ -55,7 +55,10 @@ export async function GET(request: NextRequest) {
         cache: true, // Используем кэш для оптимизации
         timeout: 10000, // 10 секунд timeout
         endpointType: 'ports',
-        params: {}, // Locations API не принимает параметры query и limit
+        params: { 
+          query: query,
+          limit: Math.max(limit, 10) // Maersk API требует минимум 10
+        },
       });
 
       if (!locationsResponse.data || !Array.isArray(locationsResponse.data)) {

@@ -41,10 +41,22 @@ jobs:
           node-version: '20'
           
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: '8'
+          run_install: false
           
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            node_modules
+            */*/node_modules
+          key: node-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            node-${{ runner.os }}-
+            
       - name: Use npm registry mirror
         run: pnpm set registry https://registry.npmmirror.com
         
@@ -55,7 +67,7 @@ jobs:
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install with retry options..."
-          pnpm install --fetch-retries=6 --fetch-timeout=60000
+          pnpm install --fetch-retries=6 --fetch-timeout=60000 --prefer-offline
         
       - name: Install Supabase CLI
         run: |
@@ -120,10 +132,22 @@ jobs:
           node-version: '20'
           
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: '8'
+          run_install: false
           
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            node_modules
+            */*/node_modules
+          key: node-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            node-${{ runner.os }}-
+            
       - name: Use npm registry mirror
         run: pnpm set registry https://registry.npmmirror.com
         
@@ -134,7 +158,7 @@ jobs:
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install with retry options..."
-          pnpm install --fetch-retries=6 --fetch-timeout=60000
+          pnpm install --fetch-retries=6 --fetch-timeout=60000 --prefer-offline
         
       - name: Reset database
         run: |
@@ -166,10 +190,22 @@ jobs:
           node-version: '20'
           
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: '8'
+          run_install: false
           
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            node_modules
+            */*/node_modules
+          key: node-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            node-${{ runner.os }}-
+            
       - name: Use npm registry mirror
         run: pnpm set registry https://registry.npmmirror.com
         
@@ -180,7 +216,7 @@ jobs:
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install with retry options..."
-          pnpm install --fetch-retries=6 --fetch-timeout=60000
+          pnpm install --fetch-retries=6 --fetch-timeout=60000 --prefer-offline
         
       - name: Seed database
         run: |

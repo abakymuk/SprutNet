@@ -79,6 +79,7 @@ import { differenceInDays } from "date-fns";
 import type { Sailing } from "@sprutnet/shared/types";
 import { DeadlinesModal } from "./deadlines-modal";
 import { VesselCard } from "./vessel-card";
+import { RouteDetailsModal } from "./RouteDetailsModal";
 import { FallbackButton } from "@/components/ui/fallback-button";
 import { ResultsSkeleton } from "./results-skeleton";
 import { ErrorState, EmptyState, FallbackState } from "./error-states";
@@ -187,7 +188,6 @@ export function SailingResults({
     string[]
   >(["20FT", "40FT", "40HC"]);
   const [maxPrice, setMaxPrice] = useState<number>(5000);
-  const [selectedSailing, setSelectedSailing] = useState<Sailing | null>(null);
 
   // Sorting logic
   const sortedSailings = useMemo(() => {
@@ -634,20 +634,21 @@ export function SailingResults({
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedSailing(sailing)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Подробности</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        <RouteDetailsModal
+                          sailing={sailing}
+                          allSailings={filteredSailings}
+                        >
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Детали рейса</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </RouteDetailsModal>
                         <DeadlinesModal sailing={sailing}>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -748,20 +749,21 @@ export function SailingResults({
 
                       {/* Action Buttons */}
                       <div className="flex gap-1">
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedSailing(sailing)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Подробности</p>
-                          </TooltipContent>
-                        </Tooltip>
+                        <RouteDetailsModal
+                          sailing={sailing}
+                          allSailings={filteredSailings}
+                        >
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Детали рейса</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </RouteDetailsModal>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button variant="outline" size="sm">
@@ -872,9 +874,14 @@ export function SailingResults({
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              Подробнее
-                            </Button>
+                            <RouteDetailsModal
+                              sailing={sailing}
+                              allSailings={filteredSailings}
+                            >
+                              <Button variant="outline" size="sm">
+                                Подробнее
+                              </Button>
+                            </RouteDetailsModal>
                             <DeadlinesModal sailing={sailing}>
                               <Button variant="outline" size="sm">
                                 <Clock className="h-4 w-4 mr-1" />
@@ -892,207 +899,6 @@ export function SailingResults({
             })}
           </div>
         )}
-
-        {/* Sailing Details Dialog */}
-        <Dialog
-          open={!!selectedSailing}
-          onOpenChange={() => setSelectedSailing(null)}
-        >
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            {selectedSailing && (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <Ship className="h-5 w-5 text-primary" />
-                    {selectedSailing.carrierName} -{" "}
-                    {selectedSailing.voyageNumber}
-                  </DialogTitle>
-                  <DialogDescription>
-                    Подробная информация о рейсе
-                  </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-6">
-                  {/* Route Information */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Navigation className="h-5 w-5 text-primary" />
-                        Маршрут
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <h4 className="font-medium">Порт отправления</h4>
-                          <div className="space-y-2">
-                            <div className="text-lg font-semibold">
-                              {selectedSailing.originPort.name}
-                            </div>
-                            <div className="text-muted-foreground">
-                              {selectedSailing.originPort.cityName},{" "}
-                              {selectedSailing.originPort.countryName}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <h4 className="font-medium">Порт назначения</h4>
-                          <div className="space-y-2">
-                            <div className="text-lg font-semibold">
-                              {selectedSailing.destinationPort.name}
-                            </div>
-                            <div className="text-muted-foreground">
-                              {selectedSailing.destinationPort.cityName},{" "}
-                              {selectedSailing.destinationPort.countryName}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Vessel Details */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Anchor className="h-5 w-5 text-primary" />
-                        Информация о судне
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                          <h4 className="font-medium mb-2">Название</h4>
-                          <p className="text-muted-foreground">
-                            {selectedSailing.vessel.name}
-                          </p>
-                        </div>
-                        <div>
-                          <h4 className="font-medium mb-2">IMO Number</h4>
-                          <p className="text-muted-foreground">
-                            {selectedSailing.vessel.imoNumber}
-                          </p>
-                        </div>
-                        <div>
-                          <h4 className="font-medium mb-2">Вместимость</h4>
-                          <p className="text-muted-foreground">
-                            {selectedSailing.vessel.capacity.toLocaleString()}{" "}
-                            TEU
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Rates Table */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <DollarSign className="h-5 w-5 text-primary" />
-                        Тарифы
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Тип контейнера</TableHead>
-                            <TableHead>Базовая ставка</TableHead>
-                            <TableHead>Доплаты</TableHead>
-                            <TableHead>Итого</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {selectedSailing.rates.map((rate, index) => (
-                            <TableRow key={index}>
-                              <TableCell className="font-medium">
-                                {rate.containerType}
-                              </TableCell>
-                              <TableCell>
-                                ${rate.baseRate.toLocaleString()}
-                              </TableCell>
-                              <TableCell>
-                                $
-                                {(
-                                  rate.totalCost - rate.baseRate
-                                ).toLocaleString()}
-                              </TableCell>
-                              <TableCell className="font-semibold">
-                                ${rate.totalCost.toLocaleString()}
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </CardContent>
-                  </Card>
-
-                  {/* Contact Information */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Phone className="h-5 w-5 text-primary" />
-                        Контактная информация
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                          <h4 className="font-medium">Перевозчик</h4>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Globe className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">
-                                Веб-сайт
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Mail className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">
-                                Email
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Phone className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-muted-foreground">
-                                Телефон
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <h4 className="font-medium">Действия</h4>
-                          <div className="space-y-2">
-                            <Button className="w-full" size="sm">
-                              <MessageSquare className="h-4 w-4 mr-2" />
-                              Отправить запрос
-                            </Button>
-                            <Button
-                              variant="outline"
-                              className="w-full"
-                              size="sm"
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              Скачать детали
-                            </Button>
-                            <Button
-                              variant="outline"
-                              className="w-full"
-                              size="sm"
-                            >
-                              <Share2 className="h-4 w-4 mr-2" />
-                              Поделиться
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </TooltipProvider>
   );

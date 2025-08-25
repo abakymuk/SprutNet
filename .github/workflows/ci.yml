@@ -45,23 +45,19 @@ jobs:
         with:
           node-version: '20'
           
-      - name: Enable corepack
-        run: corepack enable
-        
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: '8'
-          
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          run_install: false
           
       - name: Setup pnpm cache
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH || '$HOME/.local/share/pnpm/store' }}
+          path: |
+            ~/.pnpm-store
+            node_modules
+            */*/node_modules
           key: ${{ needs.setup.outputs.cache-key }}
           restore-keys: |
             node-${{ runner.os }}-
@@ -76,7 +72,7 @@ jobs:
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install with retry options..."
-          pnpm install --fetch-retries=6 --fetch-timeout=60000
+          pnpm install --fetch-retries=6 --fetch-timeout=60000 --prefer-offline
           
       - name: Generate Prisma Client
         run: |
@@ -128,10 +124,22 @@ jobs:
           node-version: '20'
           
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: '8'
+          run_install: false
           
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            node_modules
+            */*/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          restore-keys: |
+            node-${{ runner.os }}-
+            
       - name: Use npm registry mirror
         run: pnpm set registry https://registry.npmmirror.com
         
@@ -142,7 +150,7 @@ jobs:
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install with retry options..."
-          pnpm install --fetch-retries=6 --fetch-timeout=60000
+          pnpm install --fetch-retries=6 --fetch-timeout=60000 --prefer-offline
         
       - name: Security audit
         run: |
@@ -176,10 +184,22 @@ jobs:
           node-version: '20'
           
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: '8'
+          run_install: false
           
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pnpm-store
+            node_modules
+            */*/node_modules
+          key: ${{ needs.setup.outputs.cache-key }}
+          restore-keys: |
+            node-${{ runner.os }}-
+            
       - name: Use npm registry mirror
         run: pnpm set registry https://registry.npmmirror.com
         
@@ -190,7 +210,7 @@ jobs:
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install with retry options..."
-          pnpm install --fetch-retries=6 --fetch-timeout=60000
+          pnpm install --fetch-retries=6 --fetch-timeout=60000 --prefer-offline
         
       - name: Check Prisma schema
         if: hashFiles('supabase/migrations/**', 'prisma/**') != ''

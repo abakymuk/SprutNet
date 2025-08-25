@@ -23,7 +23,23 @@ export async function GET(
     // Валидация IMO
     if (!imo || !/^\d{7}$/.test(imo)) {
       return NextResponse.json(
-        { error: 'IMO must be a 7-digit number' },
+        { 
+          error: 'IMO must be a 7-digit number',
+          details: `Received IMO: "${imo}" (length: ${imo?.length || 0})`,
+          expected: '7-digit number (e.g., "1234567")'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Дополнительная проверка для некорректных IMO номеров
+    if (imo === "0000000") {
+      return NextResponse.json(
+        { 
+          error: 'Invalid IMO number',
+          details: 'IMO "0000000" is not a valid vessel identifier',
+          expected: '7-digit number (e.g., "1234567")'
+        },
         { status: 400 }
       );
     }
