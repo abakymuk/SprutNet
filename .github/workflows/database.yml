@@ -55,7 +55,7 @@ jobs:
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install with retry options..."
-          pnpm install --fetch-retries=6 --fetch-timeout=60000 --network-timeout=60000
+          pnpm install --fetch-retries=6 --fetch-timeout=60000
         
       - name: Install Supabase CLI
         run: |
@@ -134,7 +134,7 @@ jobs:
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install with retry options..."
-          pnpm install --fetch-retries=6 --fetch-timeout=60000 --network-timeout=60000
+          pnpm install --fetch-retries=6 --fetch-timeout=60000
         
       - name: Reset database
         run: |
@@ -180,7 +180,7 @@ jobs:
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install with retry options..."
-          pnpm install --fetch-retries=6 --fetch-timeout=60000 --network-timeout=60000
+          pnpm install --fetch-retries=6 --fetch-timeout=60000
         
       - name: Seed database
         run: |

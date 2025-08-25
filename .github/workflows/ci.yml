@@ -76,7 +76,7 @@ jobs:
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install with retry options..."
-          pnpm install --fetch-retries=6 --fetch-timeout=60000 --network-timeout=60000
+          pnpm install --fetch-retries=6 --fetch-timeout=60000
           
       - name: Generate Prisma Client
         run: |
@@ -142,7 +142,7 @@ jobs:
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install with retry options..."
-          pnpm install --fetch-retries=6 --fetch-timeout=60000 --network-timeout=60000
+          pnpm install --fetch-retries=6 --fetch-timeout=60000
         
       - name: Security audit
         run: pnpm audit --audit-level high
@@ -186,7 +186,7 @@ jobs:
           echo "📄 Checking for pnpm-lock.yaml:"
           ls -la pnpm-lock.yaml || echo "❌ pnpm-lock.yaml not found"
           echo "🚀 Running pnpm install with retry options..."
-          pnpm install --fetch-retries=6 --fetch-timeout=60000 --network-timeout=60000
+          pnpm install --fetch-retries=6 --fetch-timeout=60000
         
       - name: Check Prisma schema
         if: hashFiles('supabase/migrations/**', 'prisma/**') != ''
