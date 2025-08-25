@@ -50,8 +50,8 @@ function logToFile(event: TelemetryEvent): void {
   }
   
   const logEntry = JSON.stringify({
-    timestamp: new Date(event.timestamp).toISOString(),
     ...event,
+    timestamp: new Date(event.timestamp).toISOString(),
   }) + '\n';
   
   // В продакшене здесь можно писать в файл или отправлять в систему логирования
