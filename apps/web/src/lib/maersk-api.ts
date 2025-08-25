@@ -1,8 +1,8 @@
 // Maersk API Configuration
 export const MAERSK_API_CONFIG = {
   // Authentication
-  consumerKey: process.env.MAERSK_API_KEY || 'IR6PjVz4jkGu8RaazMat1Tz0l9NevMWd',
-  clientSecret: process.env.MAERSK_API_SECRET || 'CnIcg3YgUUtSp8a3',
+  consumerKey: process.env.MAERSK_CONSUMER_KEY || process.env.MAERSK_API_KEY || 'IR6PjVz4jkGu8RaazMat1Tz0l9NevMWd',
+  clientSecret: process.env.MAERSK_CLIENT_SECRET || process.env.MAERSK_API_SECRET || 'CnIcg3YgUUtSp8a3',
 
   // Base URLs
   baseUrl: process.env.MAERSK_API_BASE_URL || 'https://api.maersk.com',

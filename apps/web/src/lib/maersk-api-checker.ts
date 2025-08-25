@@ -53,8 +53,8 @@ export function checkEnvironmentVariables(): MaerskAPICheckResult {
   const warnings: string[] = [];
 
   // Проверяем обязательные переменные
-  if (!process.env.MAERSK_API_KEY) {
-    errors.push('MAERSK_API_KEY не установлен');
+  if (!process.env.MAERSK_CONSUMER_KEY && !process.env.MAERSK_API_KEY) {
+    errors.push('MAERSK_CONSUMER_KEY или MAERSK_API_KEY не установлен');
   }
 
   if (!process.env.MAERSK_API_BASE_URL) {

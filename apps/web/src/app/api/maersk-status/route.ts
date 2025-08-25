@@ -36,7 +36,7 @@ export async function GET() {
     // Добавляем рекомендации
     if (!envCheck.success) {
       recommendations.push(
-        'Проверьте настройку переменных окружения MAERSK_API_KEY и MAERSK_API_SECRET'
+        'Проверьте настройку переменных окружения MAERSK_CONSUMER_KEY и MAERSK_CLIENT_SECRET'
       );
     }
 
