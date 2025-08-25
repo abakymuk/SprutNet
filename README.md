@@ -262,6 +262,91 @@ MAERSK_CLIENT_SECRET=your_client_secret
 4. **Информация о судне:** Кликните на название судна
 5. **Телеметрия:** `/telemetry-dashboard` для мониторинга
 
+## 🚨 Troubleshooting Guide
+
+### Quick Diagnostic Checklist
+
+#### **1. Быстрая диагностика (30 секунд)**
+```bash
+# Проверка здоровья системы
+curl "http://localhost:3000/api/diagnostics?action=health"
+
+# Проверка статуса Maersk API
+curl "http://localhost:3000/api/diagnostics?action=api-status"
+
+# Тестирование всех endpoints
+curl "http://localhost:3000/api/diagnostics?action=test-endpoints"
+```
+
+#### **2. Проверка логов (1 минута)**
+```bash
+# Последние события
+curl "http://localhost:3000/api/diagnostics?action=logs"
+
+# Телеметрия дашборд
+open http://localhost:3000/telemetry-dashboard
+```
+
+### Common Issues & Solutions
+
+#### **401/403 Authentication Errors**
+```bash
+# Быстрое решение
+curl "http://localhost:3000/api/maersk-status"
+FEATURE_MAERSK=false  # временно переключиться на моки
+```
+
+#### **429 Rate Limiting**
+```bash
+# Быстрое решение
+CACHE_ENABLED=true
+CACHE_TTL_MINUTES=30
+```
+
+#### **5xx Server Errors**
+```bash
+# Автоматический fallback на моки
+# Система автоматически переключается при 5xx ошибках
+```
+
+#### **Data Structure Mismatches**
+```bash
+# Валидация структуры ответа
+curl "http://localhost:3000/api/diagnostics?action=validate-response&endpoint=/api/ports/search&fields=success,data,total"
+```
+
+### Diagnostic Tools
+
+#### **API Endpoints**
+- **Health Check:** `/api/diagnostics?action=health`
+- **API Status:** `/api/diagnostics?action=api-status`
+- **Test Endpoints:** `/api/diagnostics?action=test-endpoints`
+- **Validate Response:** `/api/diagnostics?action=validate-response`
+- **Recent Logs:** `/api/diagnostics?action=logs`
+
+#### **UI Pages**
+- **Telemetry Dashboard:** `/telemetry-dashboard`
+- **Maersk Status:** `/maersk-status`
+- **Error Scenarios:** `/e2e-error-scenarios`
+
+### Escalation Path
+
+#### **Level 1: Self-Service (0-15 минут)**
+1. Quick Diagnostic Checklist
+2. Common Issues & Solutions
+3. Fallback to mocks
+
+#### **Level 2: Development Team (15-60 минут)**
+1. Detailed logs analysis
+2. API response validation
+3. Code review and fixes
+
+#### **Level 3: Maersk Support (1-24 часа)**
+- Email: developer-support@maersk.com
+- Portal: https://developer.maersk.com/support
+
+**Полный troubleshooting guide:** [T19_TROUBLESHOOTING_GUIDE.md](docs/tickets/part2_live_api/T19_TROUBLESHOOTING_GUIDE.md)
+
 ## 🚀 Развертывание
 
 ### Vercel (рекомендуется)
