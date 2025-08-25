@@ -253,8 +253,12 @@ class RouteCacheService {
    * Получение популярных маршрутов
    */
   async getPopularRoutes(limit: number = 20): Promise<PopularRoute[]> {
+    if (!this.supabase) {
+      return [];
+    }
+
     try {
-      const { data, error } = await this.supabase.rpc('get_popular_routes', {
+      const { data, error } = await this.supabase!.rpc('get_popular_routes', {
         limit_count: limit
       });
 
@@ -273,8 +277,12 @@ class RouteCacheService {
    * Получение статистики кэша
    */
   async getCacheStats(): Promise<RouteCacheStats | null> {
+    if (!this.supabase) {
+      return null;
+    }
+
     try {
-      const { data, error } = await this.supabase.rpc('get_route_cache_stats');
+      const { data, error } = await this.supabase!.rpc('get_route_cache_stats');
 
       if (error) {
         throw error;
@@ -291,8 +299,12 @@ class RouteCacheService {
    * Очистка устаревших записей кэша
    */
   async cleanupExpiredCache(): Promise<number> {
+    if (!this.supabase) {
+      return 0;
+    }
+
     try {
-      const { data, error } = await this.supabase.rpc('cleanup_expired_route_cache');
+      const { data, error } = await this.supabase!.rpc('cleanup_expired_route_cache');
 
       if (error) {
         throw error;
@@ -361,8 +373,12 @@ class RouteCacheService {
    * Получение мониторинга кэша
    */
   async getCacheMonitoring(): Promise<any> {
+    if (!this.supabase) {
+      return null;
+    }
+
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await this.supabase!
         .from('route_cache_monitoring')
         .select('*');
 
@@ -381,8 +397,12 @@ class RouteCacheService {
    * Получение топ маршрутов по использованию
    */
   async getTopRoutes(limit: number = 10): Promise<RouteUsageStats[]> {
+    if (!this.supabase) {
+      return [];
+    }
+
     try {
-      const { data, error } = await this.supabase
+      const { data, error } = await this.supabase!
         .from('route_usage_stats')
         .select('*')
         .order('request_count', { ascending: false })
@@ -403,8 +423,12 @@ class RouteCacheService {
    * Удаление конкретной записи кэша
    */
   async deleteCacheEntry(cacheId: string): Promise<boolean> {
+    if (!this.supabase) {
+      return false;
+    }
+
     try {
-      const { error } = await this.supabase
+      const { error } = await this.supabase!
         .from('route_cache')
         .delete()
         .eq('id', cacheId);
@@ -425,8 +449,12 @@ class RouteCacheService {
    * Очистка всего кэша
    */
   async clearAllCache(): Promise<number> {
+    if (!this.supabase) {
+      return 0;
+    }
+
     try {
-      const { count, error } = await this.supabase
+      const { count, error } = await this.supabase!
         .from('route_cache')
         .delete()
         .neq('id', '00000000-0000-0000-0000-000000000000'); // Удаляем все записи
